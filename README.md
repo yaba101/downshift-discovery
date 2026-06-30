@@ -6,6 +6,7 @@ A focused product discovery page for the Downshift founding engineer build task.
 
 - A Vite, React, TypeScript, Tailwind CSS, shadcn-style UI, and TanStack Query app.
 - Client-side catalog fetching and caching from a local mirror of the provided JSON file.
+- TanStack Query Devtools for inspecting catalog cache state during development.
 - A default discovery state with curated category and popular tag entry points.
 - Search across product title, brand, category, tags, and description.
 - Lightweight filters for category and availability, plus sort controls for featured, relevance, price, and rating.
@@ -16,6 +17,8 @@ A focused product discovery page for the Downshift founding engineer build task.
 ## Why This Scope
 
 The prompt emphasized decisions around search more than the search implementation itself. For 4,000 items, a local client-side search is fast, understandable, and avoids unnecessary backend complexity. I kept the experience small but complete: one page, one prominent search path, useful browsing defaults, and enough refinement controls to help real users recover from vague searches.
+
+See `DESIGN.md` for the visual and UX rules used by the current interface.
 
 ## Search And Discovery Decisions
 
