@@ -122,24 +122,38 @@ export function FilterSidebar({
         </div>
 
         {hasFilters ? (
-          <div className="mb-7 flex flex-wrap gap-2">
+          <div className="mb-7 flex max-w-full flex-wrap gap-2">
             {controls.query.trim() ? (
-              <ActiveFilterChip label={`Remove search filter ${controls.query.trim()}`} onRemove={() => updateControls({ query: '' })}>
+              <ActiveFilterChip
+                label={`Remove search filter ${controls.query.trim()}`}
+                tooltip={`Search: ${controls.query.trim()}`}
+                onRemove={() => updateControls({ query: '' })}
+              >
                 Search: {controls.query.trim()}
               </ActiveFilterChip>
             ) : null}
             {controls.category !== 'all' ? (
-              <ActiveFilterChip label={`Remove ${controls.category} category`} onRemove={() => updateControls({ category: 'all' })}>
+              <ActiveFilterChip
+                label={`Remove ${controls.category} category`}
+                tooltip={controls.category}
+                onRemove={() => updateControls({ category: 'all' })}
+              >
                 {controls.category}
               </ActiveFilterChip>
             ) : null}
             {controls.inStockOnly ? (
-              <ActiveFilterChip label="Remove in stock filter" onRemove={() => updateControls({ inStockOnly: false })}>
+              <ActiveFilterChip label="Remove in stock filter" tooltip="In stock" onRemove={() => updateControls({ inStockOnly: false })}>
                 In stock
               </ActiveFilterChip>
             ) : null}
             {controls.priceRange !== 'all' ? (
-              <ActiveFilterChip label="Remove price filter" onRemove={() => updateControls({ priceRange: 'all' })}>
+              <ActiveFilterChip
+                label="Remove price filter"
+                tooltip={`Price: ${
+                  controls.priceRange === 'custom' ? `$${controls.customPriceMin}-${controls.customPriceMax}` : priceRangeLabel(controls.priceRange)
+                }`}
+                onRemove={() => updateControls({ priceRange: 'all' })}
+              >
                 Price: {controls.priceRange === 'custom' ? `$${controls.customPriceMin}-${controls.customPriceMax}` : priceRangeLabel(controls.priceRange)}
               </ActiveFilterChip>
             ) : null}
@@ -147,6 +161,7 @@ export function FilterSidebar({
               <ActiveFilterChip
                 key={tag}
                 label={`Remove ${tag} tag`}
+                tooltip={tag}
                 onRemove={() => updateControls({ selectedTags: controls.selectedTags.filter((selected) => selected !== tag) })}
               >
                 {tag}
@@ -365,7 +380,7 @@ function FilterGroup({ id, title, children }: { id: FilterSectionId; title: stri
       <h3>
         <button
           type="button"
-          className="mb-5 flex w-full items-center justify-between font-serif text-2xl font-bold uppercase tracking-[-0.025em] text-ink transition hover:text-muted"
+          className="mb-5 flex w-full items-center justify-between font-serif text-3xl font-extrabold uppercase tracking-[-0.035em] text-ink transition hover:text-muted"
           aria-controls={sectionContentId}
           aria-expanded={!isCollapsed}
           onClick={() => toggleSection(id)}
@@ -396,13 +411,31 @@ function FilterOption({ active, label, onClick }: { active: boolean; label: stri
   )
 }
 
-function ActiveFilterChip({ children, label, onRemove }: { children: ReactNode; label: string; onRemove: () => void }) {
+function ActiveFilterChip({
+  children,
+  label,
+  tooltip,
+  onRemove,
+}: {
+  children: ReactNode
+  label: string
+  tooltip: string
+  onRemove: () => void
+}) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-bold text-paper">
-      {children}
-      <button type="button" aria-label={label} className="-mr-1 rounded-full p-0.5 transition hover:bg-paper/15" onClick={onRemove}>
+    <span className="group relative inline-flex max-w-[min(100%,18rem)] items-center gap-2 whitespace-nowrap rounded-full bg-ink px-4 py-2 text-xs font-bold text-paper">
+      <span className="min-w-0 flex-1 truncate" title={tooltip}>
+        {children}
+      </span>
+      <button type="button" aria-label={label} className="-mr-1 shrink-0 rounded-full p-0.5 transition hover:bg-paper/15" onClick={onRemove}>
         <X className="size-3" />
       </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute left-0 top-full z-30 mt-2 max-w-72 border border-line bg-paper px-3 py-2 text-xs font-bold text-ink opacity-0 shadow-[5px_5px_0_rgba(48,48,48,0.12)] transition group-hover:opacity-100 group-focus-within:opacity-100"
+      >
+        {tooltip}
+      </span>
     </span>
   )
 }

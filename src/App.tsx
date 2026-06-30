@@ -20,6 +20,8 @@ const initialControls: SearchControls = {
   page: 1,
 }
 
+const CUSTOM_PRICE_FILTER_DEBOUNCE_MS = 1200
+
 function useDebouncedValue<T>(value: T, delay = 180) {
   const [debounced, setDebounced] = useState(value)
 
@@ -36,8 +38,8 @@ function App() {
   const [controls, setControls] = useState<SearchControls>(initialControls)
   const [isPending, startTransition] = useTransition()
   const debouncedQuery = useDebouncedValue(controls.query)
-  const debouncedCustomPriceMin = useDebouncedValue(controls.customPriceMin, 90)
-  const debouncedCustomPriceMax = useDebouncedValue(controls.customPriceMax, 90)
+  const debouncedCustomPriceMin = useDebouncedValue(controls.customPriceMin, CUSTOM_PRICE_FILTER_DEBOUNCE_MS)
+  const debouncedCustomPriceMax = useDebouncedValue(controls.customPriceMax, CUSTOM_PRICE_FILTER_DEBOUNCE_MS)
 
   const facets = useMemo(() => getCatalogFacets(items), [items])
   const activeControls = useMemo(
