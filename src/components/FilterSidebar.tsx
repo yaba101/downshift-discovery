@@ -1,8 +1,7 @@
 import { CheckCircle2, ChevronUp, Circle, Search, X } from 'lucide-react'
-import type { KeyboardEvent, ReactNode } from 'react'
+import type { Dispatch, KeyboardEvent, ReactNode, SetStateAction } from 'react'
 import { useId, useState } from 'react'
 import { Input } from './ui/input'
-import { useFilterSectionStore, type FilterSectionId } from '../stores/filterSections'
 import type { PriceRange, SearchControls } from '../types/catalog'
 
 const priceRanges: Array<{ label: string; value: PriceRange }> = [
@@ -17,6 +16,16 @@ const priceRanges: Array<{ label: string; value: PriceRange }> = [
 const MIN_PRICE = 0
 const MAX_PRICE = 2500
 const PRICE_STEP = 25
+
+type FilterSectionId = 'search' | 'category' | 'availability' | 'price' | 'tags'
+
+const defaultCollapsedSections: Record<FilterSectionId, boolean> = {
+  search: false,
+  category: false,
+  availability: false,
+  price: false,
+  tags: false,
+}
 
 type FilterSidebarProps = {
   categories: string[]
@@ -45,6 +54,7 @@ export function FilterSidebar({
 }: FilterSidebarProps) {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(0)
+  const [collapsedSections, setCollapsedSections] = useState(defaultCollapsedSections)
   const suggestionsListId = useId()
   const visibleSuggestions = suggestions.slice(0, 3)
   const customMinPercent = priceToPercent(controls.customPriceMin)
@@ -170,7 +180,7 @@ export function FilterSidebar({
           </div>
         ) : null}
 
-        <FilterGroup id="search" title="Search">
+        <FilterGroup collapsedSections={collapsedSections} id="search" setCollapsedSections={setCollapsedSections} title="Search">
           <div className="relative">
             <label htmlFor="sidebar-search" className="sr-only">
               Search products
@@ -229,7 +239,7 @@ export function FilterSidebar({
           ) : null}
         </FilterGroup>
 
-        <FilterGroup id="category" title="Category">
+        <FilterGroup collapsedSections={collapsedSections} id="category" setCollapsedSections={setCollapsedSections} title="Category">
           <div className="space-y-3">
             {['all', ...categories].map((category) => {
               const active = controls.category === category
@@ -245,7 +255,7 @@ export function FilterSidebar({
           </div>
         </FilterGroup>
 
-        <FilterGroup id="availability" title="Availability">
+        <FilterGroup collapsedSections={collapsedSections} id="availability" setCollapsedSections={setCollapsedSections} title="Availability">
           <FilterOption
             active={controls.inStockOnly}
             label="In stock only"
@@ -253,7 +263,7 @@ export function FilterSidebar({
           />
         </FilterGroup>
 
-        <FilterGroup id="price" title="Price">
+        <FilterGroup collapsedSections={collapsedSections} id="price" setCollapsedSections={setCollapsedSections} title="Price">
           <div className="space-y-3">
             {priceRanges.map((range) => (
               <FilterOption
@@ -346,7 +356,7 @@ export function FilterSidebar({
           ) : null}
         </FilterGroup>
 
-        <FilterGroup id="tags" title="Tags">
+        <FilterGroup collapsedSections={collapsedSections} id="tags" setCollapsedSections={setCollapsedSections} title="Tags">
           <div className="flex flex-wrap gap-2">
             {popularTags.map((tag) => {
               const active = controls.selectedTags.includes(tag)
@@ -370,9 +380,20 @@ export function FilterSidebar({
   )
 }
 
-function FilterGroup({ id, title, children }: { id: FilterSectionId; title: string; children: ReactNode }) {
-  const isCollapsed = useFilterSectionStore((state) => state.collapsedSections[id] ?? false)
-  const toggleSection = useFilterSectionStore((state) => state.toggleSection)
+function FilterGroup({
+  id,
+  title,
+  children,
+  collapsedSections,
+  setCollapsedSections,
+}: {
+  id: FilterSectionId
+  title: string
+  children: ReactNode
+  collapsedSections: Record<FilterSectionId, boolean>
+  setCollapsedSections: Dispatch<SetStateAction<Record<FilterSectionId, boolean>>>
+}) {
+  const isCollapsed = collapsedSections[id] ?? false
   const sectionContentId = `filter-section-${id}`
 
   return (
@@ -383,7 +404,12 @@ function FilterGroup({ id, title, children }: { id: FilterSectionId; title: stri
           className="mb-5 flex w-full items-center justify-between font-serif text-3xl font-extrabold uppercase tracking-[-0.035em] text-ink transition hover:text-muted"
           aria-controls={sectionContentId}
           aria-expanded={!isCollapsed}
-          onClick={() => toggleSection(id)}
+          onClick={() =>
+            setCollapsedSections((current) => ({
+              ...current,
+              [id]: !current[id],
+            }))
+          }
         >
           <span>{title}</span>
           <ChevronUp className={`size-5 stroke-[2.4] transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />

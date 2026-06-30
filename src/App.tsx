@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useQueryStates } from 'nuqs'
 import { CatalogHeader } from './components/CatalogHeader'
 import { FilterSidebar } from './components/FilterSidebar'
@@ -8,10 +8,6 @@ import {
   DEFAULT_SEARCH_CONTROLS,
   catalogControlParsers,
   catalogControlUrlKeys,
-  clearPersistedControls,
-  hasCatalogUrlControls,
-  persistControlsToStorage,
-  readControlsFromStorage,
 } from './lib/controlState'
 import { filterAndRankItems, getCatalogFacets, PAGE_SIZE } from './lib/search'
 import { useCatalogItems } from './hooks/useCatalogItems'
@@ -53,15 +49,6 @@ function getCatalogSafeControls(controls: SearchControls, categories: string[], 
 function App() {
   const { data: items = [], isLoading, isError, refetch } = useCatalogItems()
   const [isPending, startTransition] = useTransition()
-  const initialControlsSnapshot = useMemo(() => {
-    const hasUrlControls = hasCatalogUrlControls()
-
-    return {
-      hasUrlControls,
-      storedControls: hasUrlControls ? null : readControlsFromStorage(),
-    }
-  }, [])
-  const skipNextPersistRef = useRef(false)
   const [controls, setControls] = useQueryStates(catalogControlParsers, {
     clearOnDefault: true,
     history: 'replace',
@@ -110,24 +97,6 @@ function App() {
   )
 
   useEffect(() => {
-    if (initialControlsSnapshot.hasUrlControls || !initialControlsSnapshot.storedControls) {
-      return
-    }
-
-    skipNextPersistRef.current = true
-    void setControls(initialControlsSnapshot.storedControls)
-  }, [initialControlsSnapshot, setControls])
-
-  useEffect(() => {
-    if (skipNextPersistRef.current) {
-      skipNextPersistRef.current = false
-      return
-    }
-
-    persistControlsToStorage(shareableControls)
-  }, [shareableControls])
-
-  useEffect(() => {
     if (items.length === 0 || controls.page === shareableControls.page) {
       return
     }
@@ -173,7 +142,6 @@ function App() {
   }
 
   function resetControls() {
-    clearPersistedControls()
     void setControls(DEFAULT_SEARCH_CONTROLS)
   }
 
