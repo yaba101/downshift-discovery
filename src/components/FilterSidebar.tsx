@@ -31,9 +31,13 @@ type FilterSidebarProps = {
   categories: string[]
   controls: SearchControls
   hasFilters: boolean
+  idPrefix?: string
+  isSheet?: boolean
+  titleId?: string
   popularTags: string[]
   suggestions: string[]
   chooseQuery: (query: string) => void
+  onClose?: () => void
   resetControls: () => void
   updateControls: (nextControls: Partial<SearchControls>) => void
 }
@@ -46,16 +50,22 @@ export function FilterSidebar({
   categories,
   controls,
   hasFilters,
+  idPrefix = 'sidebar',
+  isSheet = false,
+  titleId,
   popularTags,
   suggestions,
   chooseQuery,
+  onClose,
   resetControls,
   updateControls,
 }: FilterSidebarProps) {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(0)
   const [collapsedSections, setCollapsedSections] = useState(defaultCollapsedSections)
-  const suggestionsListId = useId()
+  const generatedId = useId()
+  const searchInputId = `${idPrefix}-search`
+  const suggestionsListId = `${idPrefix}-${generatedId}-suggestions`
   const visibleSuggestions = suggestions.slice(0, 3)
   const customMinPercent = priceToPercent(controls.customPriceMin)
   const customMaxPercent = priceToPercent(controls.customPriceMax)
@@ -116,19 +126,33 @@ export function FilterSidebar({
   }
 
   return (
-    <aside className="border-b border-line bg-paper text-ink lg:border-b-0 lg:border-r">
-      <div className="px-5 py-8 lg:px-7">
+    <aside className={`${isSheet ? 'h-full overflow-y-auto bg-paper' : 'hidden border-r border-line bg-paper lg:block'} text-ink`}>
+      <div className={isSheet ? 'px-5 py-6' : 'px-5 py-8 lg:px-7'}>
         <div className="mb-7 flex items-start justify-between gap-4">
-          <h2 className="font-serif text-4xl font-bold uppercase leading-none tracking-[-0.035em]">Filter by</h2>
-          {hasFilters ? (
-            <button
-              type="button"
-              className="mt-1 text-sm font-bold text-muted underline underline-offset-4 transition hover:text-ink"
-              onClick={resetControls}
-            >
-              Clear all
-            </button>
-          ) : null}
+          <h2 id={titleId} className="font-serif text-4xl font-bold uppercase leading-none tracking-[-0.035em]">
+            Filter by
+          </h2>
+          <div className="flex items-center gap-3">
+            {hasFilters ? (
+              <button
+                type="button"
+                className="mt-1 text-sm font-bold text-muted underline underline-offset-4 transition hover:text-ink"
+                onClick={resetControls}
+              >
+                Clear all
+              </button>
+            ) : null}
+            {onClose ? (
+              <button
+                type="button"
+                className="grid size-10 place-items-center border border-line text-ink transition hover:bg-mist"
+                aria-label="Close filters"
+                onClick={onClose}
+              >
+                <X className="size-4" />
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {hasFilters ? (
@@ -182,11 +206,11 @@ export function FilterSidebar({
 
         <FilterGroup collapsedSections={collapsedSections} id="search" setCollapsedSections={setCollapsedSections} title="Search">
           <div className="relative">
-            <label htmlFor="sidebar-search" className="sr-only">
+            <label htmlFor={searchInputId} className="sr-only">
               Search products
             </label>
             <Input
-              id="sidebar-search"
+              id={searchInputId}
               aria-activedescendant={hasSuggestions && activeSuggestionIndex >= 0 ? `${suggestionsListId}-option-${activeSuggestionIndex}` : undefined}
               aria-autocomplete="list"
               aria-controls={hasSuggestions ? suggestionsListId : undefined}

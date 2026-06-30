@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { SlidersHorizontal } from 'lucide-react'
 import { useQueryStates } from 'nuqs'
 import { CatalogHeader } from './components/CatalogHeader'
 import { FilterSidebar } from './components/FilterSidebar'
@@ -48,6 +49,8 @@ function getCatalogSafeControls(controls: SearchControls, categories: string[], 
 
 function App() {
   const { data: items = [], isLoading, isError, refetch } = useCatalogItems()
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
+  const mobileFilterDialogRef = useRef<HTMLDialogElement>(null)
   const [isPending, startTransition] = useTransition()
   const [controls, setControls] = useQueryStates(catalogControlParsers, {
     clearOnDefault: true,
@@ -90,6 +93,13 @@ function App() {
     shareableControls.priceRange !== 'all' ||
     shareableControls.selectedTags.length > 0 ||
     hasActiveSearch
+  const activeFilterCount = [
+    hasActiveSearch,
+    shareableControls.category !== 'all',
+    shareableControls.inStockOnly,
+    shareableControls.priceRange !== 'all',
+    ...shareableControls.selectedTags.map(() => true),
+  ].filter(Boolean).length
 
   const querySuggestions = useMemo(
     () => (catalogSafeControls.query.trim() ? result.items.slice(0, 5).map((item) => item.title) : []),
@@ -143,6 +153,16 @@ function App() {
 
   function resetControls() {
     void setControls(DEFAULT_SEARCH_CONTROLS)
+  }
+
+  function openMobileFilters() {
+    setIsMobileFilterOpen(true)
+    mobileFilterDialogRef.current?.showModal()
+  }
+
+  function closeMobileFilters() {
+    setIsMobileFilterOpen(false)
+    mobileFilterDialogRef.current?.close()
   }
 
   return (
@@ -200,6 +220,7 @@ function App() {
             chooseQuery={chooseQuery}
             controls={shareableControls}
             hasFilters={hasFilters}
+            idPrefix="desktop-filter"
             popularTags={facets.popularTags}
             resetControls={resetControls}
             suggestions={querySuggestions}
@@ -219,6 +240,44 @@ function App() {
           </section>
         </div>
       </div>
+
+      <button
+        type="button"
+        className="fixed right-4 top-4 z-40 inline-flex items-center gap-2 border border-line bg-ink px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-paper shadow-[6px_6px_0_rgba(48,48,48,0.16)] transition hover:-translate-y-0.5 hover:shadow-[8px_8px_0_rgba(48,48,48,0.14)] focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-paper lg:hidden"
+        aria-expanded={isMobileFilterOpen}
+        aria-controls="mobile-filter-sheet"
+        onClick={openMobileFilters}
+      >
+        <SlidersHorizontal className="size-4" />
+        Filters
+        {activeFilterCount > 0 ? (
+          <span className="-mr-1 grid min-w-5 place-items-center rounded-full bg-paper px-1.5 py-0.5 text-[10px] text-ink">{activeFilterCount}</span>
+        ) : null}
+      </button>
+
+      <dialog
+        ref={mobileFilterDialogRef}
+        id="mobile-filter-sheet"
+        className="fixed bottom-0 left-auto right-0 top-0 m-0 h-dvh max-h-none w-[min(92vw,430px)] max-w-none border-0 border-l border-line bg-paper p-0 text-ink shadow-[-16px_0_40px_rgba(48,48,48,0.22)] backdrop:bg-ink/45 backdrop:backdrop-blur-[2px] lg:hidden"
+        aria-labelledby="mobile-filter-title"
+        onCancel={() => setIsMobileFilterOpen(false)}
+        onClose={() => setIsMobileFilterOpen(false)}
+      >
+        <FilterSidebar
+          categories={facets.categories}
+          chooseQuery={chooseQuery}
+          controls={shareableControls}
+          hasFilters={hasFilters}
+          idPrefix="mobile-filter"
+          isSheet
+          onClose={closeMobileFilters}
+          popularTags={facets.popularTags}
+          resetControls={resetControls}
+          suggestions={querySuggestions}
+          titleId="mobile-filter-title"
+          updateControls={updateControls}
+        />
+      </dialog>
     </main>
   )
 }
