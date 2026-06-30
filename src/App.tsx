@@ -64,13 +64,11 @@ function App() {
   }
 
   return (
-    <main className="min-h-screen bg-sage-frame p-3 sm:p-8">
-      <div className="mx-auto max-w-[1500px] rounded-[34px] bg-catalog-canvas p-4 shadow-[0_30px_120px_rgba(41,54,34,0.22)] sm:p-8">
-      <CatalogHeader
-        updateControls={updateControls}
-      />
+    <main className="min-h-screen bg-sage-frame p-3 sm:p-8 lg:p-10">
+      <div className="mx-auto max-w-[1420px] rounded-[34px] bg-catalog-canvas px-5 py-8 shadow-[0_30px_120px_rgba(41,54,34,0.22)] sm:px-8 lg:px-10">
+        <CatalogHeader updateControls={updateControls} />
 
-        <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
           <FilterSidebar
             categories={facets.categories}
             chooseQuery={chooseQuery}
@@ -82,17 +80,17 @@ function App() {
             updateControls={updateControls}
           />
           <section className="order-first min-w-0 lg:order-none" aria-labelledby="results-heading">
-          <ResultsPanel
-            controls={controls}
-            debouncedQuery={debouncedQuery}
-            refetch={() => void refetch()}
-            resetControls={resetControls}
-            result={result}
-            status={{ hasActiveSearch, hasFilters, isError, isLoading, isPending }}
-            updateControls={updateControls}
-          />
-        </section>
-      </div>
+            <ResultsPanel
+              controls={controls}
+              debouncedQuery={debouncedQuery}
+              refetch={() => void refetch()}
+              resetControls={resetControls}
+              result={result}
+              status={{ hasActiveSearch, hasFilters, isError, isLoading, isPending }}
+              updateControls={updateControls}
+            />
+          </section>
+        </div>
       </div>
     </main>
   )

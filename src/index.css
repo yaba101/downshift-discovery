@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800;900&family=Rubik:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: 'Inter', sans-serif;
-  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Nunito Sans', sans-serif;
+  --font-serif: 'Rubik', sans-serif;
   --color-porcelain: #fafaf9;
   --color-paper: #f8faf6;
   --color-ink: #283018;
@@ -15,12 +15,12 @@
   --color-honey: #a16207;
   --color-cobalt: #1e3a5f;
   --color-plum: #5c465e;
-  --color-sage-frame: #9ba889;
-  --color-catalog-canvas: #e7ebe7;
-  --color-catalog-panel: #eef1ed;
+  --color-sage-frame: #9caa85;
+  --color-catalog-canvas: #e9ece9;
+  --color-catalog-panel: #eef1ee;
   --color-card-cream: #fbfdf8;
-  --color-olive: #303b16;
-  --color-sage-button: #aab1a3;
+  --color-olive: #303914;
+  --color-sage-button: #a9b0a3;
 }
 
 * {

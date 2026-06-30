@@ -41,7 +41,7 @@ export function ProductCard({ item, query, tilt = 'none' }: ProductCardProps) {
 
   return (
     <Card
-      className={`group relative flex min-h-[360px] flex-col overflow-hidden rounded-[30px] border-0 bg-card-cream p-5 shadow-none transition duration-300 hover:-translate-y-1 hover:rotate-0 hover:shadow-[0_28px_60px_rgba(52,60,39,0.12)] ${tiltClass}`}
+      className={`group relative flex min-h-[342px] flex-col overflow-hidden rounded-[30px] border-0 bg-card-cream p-6 shadow-none transition duration-300 hover:-translate-y-1 hover:rotate-0 hover:shadow-[0_28px_60px_rgba(52,60,39,0.12)] ${tiltClass}`}
     >
       <div className="flex min-h-0 flex-1 items-center justify-center">
         {item.image && !imageFailed ? (
@@ -62,12 +62,10 @@ export function ProductCard({ item, query, tilt = 'none' }: ProductCardProps) {
       </div>
 
       <div className="mt-5 pr-12">
-        <p className="mb-1 truncate text-sm font-bold text-olive/60">{item.brand}</p>
-        <h3 className="line-clamp-2 text-base font-bold leading-6 text-olive">{highlightText(item.title, query)}</h3>
-        <p className="mt-1 text-lg font-bold text-olive">{item.priceLabel}</p>
-        <p className="mt-1 text-xs font-bold text-olive/50">
-          {item.ratingLabel} rating · {item.reviews.toLocaleString()} reviews
-        </p>
+        <h3 className="line-clamp-2 text-[16px] font-bold leading-6 tracking-[-0.02em] text-olive">
+          {highlightText(item.title, query)}
+        </h3>
+        <p className="mt-1 text-[17px] font-extrabold tracking-[-0.02em] text-olive">{item.priceLabel}</p>
       </div>
 
       {!item.inStock ? (
