@@ -7,10 +7,14 @@ import type { SearchControls, SortMode } from '../types/catalog'
 type CatalogHeaderProps = {
   categories: string[]
   controls: SearchControls
+  suggestions: string[]
+  chooseQuery: (query: string) => void
   updateControls: (nextControls: Partial<SearchControls>) => void
 }
 
-export function CatalogHeader({ categories, controls, updateControls }: CatalogHeaderProps) {
+export function CatalogHeader({ categories, controls, suggestions, chooseQuery, updateControls }: CatalogHeaderProps) {
+  const showSuggestions = controls.query.trim().length > 0 && suggestions.length > 0
+
   return (
     <header className="border-b border-line bg-paper/90 backdrop-blur">
       <div className="mx-auto flex max-w-[1500px] flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
@@ -46,6 +50,27 @@ export function CatalogHeader({ categories, controls, updateControls }: CatalogH
               >
                 <X className="size-4" />
               </button>
+            ) : null}
+            {showSuggestions ? (
+              <div className="absolute inset-x-0 top-[calc(100%+0.5rem)] z-30 overflow-hidden rounded-lg border border-line bg-paper shadow-2xl">
+                <div className="border-b border-line px-4 py-2 text-xs font-extrabold uppercase text-muted">
+                  Suggestions
+                </div>
+                <ul className="list-none p-1">
+                  {suggestions.map((suggestion) => (
+                    <li key={suggestion}>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-bold text-ink transition hover:bg-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
+                        onClick={() => chooseQuery(suggestion)}
+                      >
+                        <Search className="size-4 text-cobalt" />
+                        <span className="line-clamp-2">{suggestion}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
           </div>
 

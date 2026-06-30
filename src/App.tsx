@@ -61,6 +61,10 @@ function App() {
         .slice(0, 3),
     [items],
   )
+  const querySuggestions = useMemo(
+    () => (controls.query.trim() ? result.items.slice(0, 5).map((item) => item.title) : []),
+    [controls.query, result.items],
+  )
 
   function updateControls(nextControls: Partial<SearchControls>) {
     startTransition(() => {
@@ -78,7 +82,13 @@ function App() {
 
   return (
     <main className="min-h-screen">
-      <CatalogHeader categories={facets.categories} controls={controls} updateControls={updateControls} />
+      <CatalogHeader
+        categories={facets.categories}
+        chooseQuery={chooseQuery}
+        controls={controls}
+        suggestions={querySuggestions}
+        updateControls={updateControls}
+      />
       <StatsStrip isLoading={isLoading} stats={catalogStats} />
 
       <div className="mx-auto grid max-w-[1500px] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:px-8">
