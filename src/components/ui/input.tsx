@@ -10,7 +10,7 @@ export function Input({ className, ref, ...props }: InputProps) {
     <input
       ref={ref}
       className={cn(
-        'h-14 w-full rounded-md border border-line bg-white px-5 text-base text-ink shadow-sm outline-none transition placeholder:text-muted focus:border-ink focus:ring-4 focus:ring-ink/10',
+        'h-14 w-full rounded-md border border-line bg-paper px-5 text-base font-semibold text-ink shadow-sm outline-none transition placeholder:font-medium placeholder:text-muted focus:border-cobalt focus:ring-4 focus:ring-cobalt/10',
         className,
       )}
       {...props}

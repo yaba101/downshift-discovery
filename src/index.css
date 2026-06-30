@@ -1,17 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
 @theme {
   --font-sans: 'Manrope', sans-serif;
   --font-serif: 'Fraunces', Georgia, serif;
-  --color-porcelain: #fbf7ef;
-  --color-ink: #202521;
-  --color-muted: #69716f;
-  --color-line: #dedbd0;
-  --color-mist: #edf3f1;
-  --color-sage: #286b5c;
-  --color-clay: #a85132;
-  --color-honey: #d9a441;
+  --color-porcelain: #f7f4ee;
+  --color-paper: #fffdf8;
+  --color-ink: #151816;
+  --color-muted: #68706c;
+  --color-line: #d8ded8;
+  --color-mist: #e9f0ef;
+  --color-sage: #2e725f;
+  --color-clay: #a3482f;
+  --color-honey: #d6a536;
+  --color-cobalt: #254a70;
+  --color-plum: #5c465e;
 }
 
 * {
@@ -19,8 +22,8 @@
 }
 
 html {
-  background: #fbf7ef;
-  color: #202521;
+  background: #eef3f1;
+  color: #151816;
   font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -32,14 +35,22 @@ body {
   min-width: 320px;
   margin: 0;
   background:
-    linear-gradient(120deg, rgba(40, 107, 92, 0.08), transparent 35%),
-    linear-gradient(240deg, rgba(168, 81, 50, 0.12), transparent 34%),
-    #fbf7ef;
+    linear-gradient(180deg, rgba(37, 74, 112, 0.1), transparent 420px),
+    linear-gradient(120deg, rgba(46, 114, 95, 0.12), transparent 38%),
+    #eef3f1;
 }
 
 button,
 input {
   font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 .sr-only {
