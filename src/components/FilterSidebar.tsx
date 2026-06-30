@@ -1,6 +1,6 @@
 import { CheckCircle2, ChevronUp, Circle, Search, X } from 'lucide-react'
-import type { ReactNode } from 'react'
-import { useState } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
+import { useId, useState } from 'react'
 import { Input } from './ui/input'
 import { useFilterSectionStore, type FilterSectionId } from '../stores/filterSections'
 import type { PriceRange, SearchControls } from '../types/catalog'
@@ -44,9 +44,13 @@ export function FilterSidebar({
   updateControls,
 }: FilterSidebarProps) {
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(0)
+  const suggestionsListId = useId()
+  const visibleSuggestions = suggestions.slice(0, 3)
   const customMinPercent = priceToPercent(controls.customPriceMin)
   const customMaxPercent = priceToPercent(controls.customPriceMax)
-  const hasSuggestions = showSuggestions && controls.query.trim() && suggestions.length > 0
+  const hasSuggestions = showSuggestions && controls.query.trim().length > 0 && visibleSuggestions.length > 0
+  const activeSuggestionIndex = hasSuggestions ? Math.min(focusedSuggestionIndex, visibleSuggestions.length - 1) : -1
 
   function toggleTag(tag: string) {
     const selectedTags = controls.selectedTags.includes(tag)
@@ -69,6 +73,36 @@ export function FilterSidebar({
   function chooseSuggestion(suggestion: string) {
     chooseQuery(suggestion)
     setShowSuggestions(false)
+  }
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (!visibleSuggestions.length) {
+      return
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setShowSuggestions(true)
+      setFocusedSuggestionIndex((current) => (current >= visibleSuggestions.length - 1 ? 0 : current + 1))
+      return
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setShowSuggestions(true)
+      setFocusedSuggestionIndex((current) => (current <= 0 ? visibleSuggestions.length - 1 : current - 1))
+      return
+    }
+
+    if (event.key === 'Enter' && hasSuggestions && activeSuggestionIndex >= 0) {
+      event.preventDefault()
+      chooseSuggestion(visibleSuggestions[activeSuggestionIndex])
+      return
+    }
+
+    if (event.key === 'Escape') {
+      setShowSuggestions(false)
+    }
   }
 
   return (
@@ -128,25 +162,47 @@ export function FilterSidebar({
             </label>
             <Input
               id="sidebar-search"
+              aria-activedescendant={hasSuggestions && activeSuggestionIndex >= 0 ? `${suggestionsListId}-option-${activeSuggestionIndex}` : undefined}
+              aria-autocomplete="list"
+              aria-controls={hasSuggestions ? suggestionsListId : undefined}
+              aria-expanded={hasSuggestions}
+              role="combobox"
               value={controls.query}
               onChange={(event) => {
                 setShowSuggestions(true)
+                setFocusedSuggestionIndex(0)
                 updateControls({ query: event.target.value })
               }}
-              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => window.setTimeout(() => setShowSuggestions(false), 120)}
+              onFocus={() => {
+                setShowSuggestions(true)
+                setFocusedSuggestionIndex(0)
+              }}
+              onKeyDown={handleSearchKeyDown}
               className="h-11 rounded-none border-line bg-transparent pl-4 pr-11 text-sm font-semibold shadow-none placeholder:text-muted focus-visible:ring-1 focus-visible:ring-ink"
               placeholder="Search catalog"
             />
             <Search className="absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
           </div>
           {hasSuggestions ? (
-            <div className="-mt-px border border-line bg-paper shadow-[6px_6px_0_rgba(48,48,48,0.08)]" aria-label="Search suggestions">
+            <div
+              id={suggestionsListId}
+              role="listbox"
+              className="-mt-px border border-line bg-paper shadow-[6px_6px_0_rgba(48,48,48,0.08)]"
+              aria-label="Search suggestions"
+            >
               <p className="border-b border-line px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Suggestions</p>
-              {suggestions.slice(0, 3).map((suggestion) => (
+              {visibleSuggestions.map((suggestion, index) => (
                 <button
                   type="button"
+                  id={`${suggestionsListId}-option-${index}`}
                   key={suggestion}
-                  className="flex w-full items-center gap-3 border-b border-line/60 px-4 py-3 text-left text-sm font-semibold text-muted transition last:border-b-0 hover:bg-mist hover:text-ink"
+                  role="option"
+                  aria-selected={activeSuggestionIndex === index}
+                  className={`flex w-full items-center gap-3 border-b border-line/60 px-4 py-3 text-left text-sm font-semibold transition last:border-b-0 ${
+                    activeSuggestionIndex === index ? 'bg-mist text-ink' : 'text-muted hover:bg-mist hover:text-ink'
+                  }`}
+                  onMouseEnter={() => setFocusedSuggestionIndex(index)}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => chooseSuggestion(suggestion)}
                 >

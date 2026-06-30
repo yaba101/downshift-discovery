@@ -2,7 +2,7 @@ import type { CatalogItem, RankedItem, SearchControls, SortMode } from '../types
 
 export const PAGE_SIZE = 12
 
-type FilterResult = {
+export type FilterResult = {
   items: RankedItem[]
   totalItems: number
   totalPages: number

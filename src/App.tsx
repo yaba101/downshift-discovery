@@ -5,6 +5,7 @@ import { ResultsPanel } from './components/ResultsPanel'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
 import { filterAndRankItems, getCatalogFacets, PAGE_SIZE } from './lib/search'
 import { useCatalogItems } from './hooks/useCatalogItems'
+import { useCatalogResults } from './hooks/useCatalogResults'
 import type { SearchControls, SortMode } from './types/catalog'
 
 const initialControls: SearchControls = {
@@ -19,7 +20,7 @@ const initialControls: SearchControls = {
   page: 1,
 }
 
-function useDebouncedValue(value: string, delay = 180) {
+function useDebouncedValue<T>(value: T, delay = 180) {
   const [debounced, setDebounced] = useState(value)
 
   useEffect(() => {
@@ -35,10 +36,20 @@ function App() {
   const [controls, setControls] = useState<SearchControls>(initialControls)
   const [isPending, startTransition] = useTransition()
   const debouncedQuery = useDebouncedValue(controls.query)
+  const debouncedCustomPriceMin = useDebouncedValue(controls.customPriceMin, 90)
+  const debouncedCustomPriceMax = useDebouncedValue(controls.customPriceMax, 90)
 
   const facets = useMemo(() => getCatalogFacets(items), [items])
-  const activeControls = useMemo(() => ({ ...controls, query: debouncedQuery }), [controls, debouncedQuery])
-  const result = useMemo(() => filterAndRankItems(items, activeControls), [items, activeControls])
+  const activeControls = useMemo(
+    () => ({
+      ...controls,
+      customPriceMax: controls.priceRange === 'custom' ? debouncedCustomPriceMax : controls.customPriceMax,
+      customPriceMin: controls.priceRange === 'custom' ? debouncedCustomPriceMin : controls.customPriceMin,
+      query: debouncedQuery,
+    }),
+    [controls, debouncedCustomPriceMax, debouncedCustomPriceMin, debouncedQuery],
+  )
+  const { data: result } = useCatalogResults(items, activeControls)
   const hasActiveSearch = debouncedQuery.trim().length > 0
   const hasFilters =
     controls.category !== 'all' ||
