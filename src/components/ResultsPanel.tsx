@@ -45,8 +45,15 @@ export function ResultsPanel({
   const pageEnd = Math.min(currentPage * 12, result.totalItems)
   const { isError, isLoading, isPending } = status
 
+  function changePage(page: number) {
+    updateControls({ page })
+    window.requestAnimationFrame(() => {
+      document.getElementById('catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
   return (
-    <div className="min-w-0">
+    <div id="catalog-results" className="min-w-0 scroll-mt-4">
       {isPending ? (
         <p className="border-b border-line px-5 py-2 text-xs font-bold uppercase tracking-[0.18em] text-muted">Updating results</p>
       ) : null}
@@ -96,7 +103,7 @@ export function ResultsPanel({
                 variant="outline"
                 className="h-10 rounded-none border-line bg-transparent px-4 text-[13px] font-bold uppercase tracking-[0.12em]"
                 disabled={currentPage <= 1}
-                onClick={() => updateControls({ page: currentPage - 1 })}
+                onClick={() => changePage(currentPage - 1)}
               >
                 Back
               </Button>
@@ -104,7 +111,7 @@ export function ResultsPanel({
                 <button
                   type="button"
                   key={page}
-                  onClick={() => updateControls({ page })}
+                  onClick={() => changePage(page)}
                   className={`grid size-10 place-items-center border border-line text-sm font-bold transition ${
                     currentPage === page ? 'bg-ink text-paper' : 'bg-transparent text-ink hover:bg-mist'
                   }`}
@@ -118,11 +125,11 @@ export function ResultsPanel({
                 variant="default"
                 className="h-10 rounded-none bg-ink px-4 text-[13px] font-bold uppercase tracking-[0.12em] text-paper"
                 disabled={currentPage >= result.totalPages}
-                onClick={() => updateControls({ page: currentPage + 1 })}
+                onClick={() => changePage(currentPage + 1)}
               >
                 Next
               </Button>
-              <PageJump key={currentPage} currentPage={currentPage} totalPages={result.totalPages} updateControls={updateControls} />
+              <PageJump key={currentPage} changePage={changePage} currentPage={currentPage} totalPages={result.totalPages} />
             </div>
             <p className="text-sm font-semibold text-muted">
               {pageStart.toLocaleString()}-{pageEnd.toLocaleString()} of {result.totalItems.toLocaleString()}
@@ -135,13 +142,13 @@ export function ResultsPanel({
 }
 
 function PageJump({
+  changePage,
   currentPage,
   totalPages,
-  updateControls,
 }: {
+  changePage: (page: number) => void
   currentPage: number
   totalPages: number
-  updateControls: (nextControls: Partial<SearchControls>) => void
 }) {
   const [pageInput, setPageInput] = useState(String(currentPage))
 
@@ -153,7 +160,7 @@ function PageJump({
       return
     }
 
-    updateControls({ page: Math.min(totalPages, Math.max(1, Math.trunc(nextPage))) })
+    changePage(Math.min(totalPages, Math.max(1, Math.trunc(nextPage))))
   }
 
   return (

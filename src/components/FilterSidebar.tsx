@@ -124,15 +124,17 @@ export function FilterSidebar({
             <Search className="absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
           </div>
           {controls.query.trim() && suggestions.length > 0 ? (
-            <div className="mt-3 space-y-2">
+            <div className="mt-2 border border-line bg-paper shadow-[6px_6px_0_rgba(48,48,48,0.08)]" aria-label="Search suggestions">
+              <p className="border-b border-line px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Suggestions</p>
               {suggestions.slice(0, 3).map((suggestion) => (
                 <button
                   type="button"
                   key={suggestion}
-                  className="block w-full truncate text-left text-xs font-bold text-muted transition hover:text-ink"
+                  className="flex w-full items-center gap-3 border-b border-line/60 px-4 py-3 text-left text-sm font-semibold text-muted transition last:border-b-0 hover:bg-mist hover:text-ink"
                   onClick={() => chooseQuery(suggestion)}
                 >
-                  {suggestion}
+                  <Search className="size-4 shrink-0" />
+                  <span className="truncate">{suggestion}</span>
                 </button>
               ))}
             </div>

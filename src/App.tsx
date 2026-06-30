@@ -52,6 +52,31 @@ function App() {
     [controls.query, result.items],
   )
 
+  useEffect(() => {
+    if (items.length === 0 || result.totalPages <= 1) {
+      return
+    }
+
+    const pagesToPrefetch = [controls.page + 1, controls.page - 1].filter((page) => page >= 1 && page <= result.totalPages)
+    const imageUrls = pagesToPrefetch.flatMap((page) =>
+      filterAndRankItems(items, { ...activeControls, page })
+        .items.map((item) => item.image)
+        .filter((image): image is string => Boolean(image)),
+    )
+
+    const preloadedImages = imageUrls.map((src) => {
+      const image = new Image()
+      image.src = src
+      return image
+    })
+
+    return () => {
+      preloadedImages.forEach((image) => {
+        image.src = ''
+      })
+    }
+  }, [activeControls, controls.page, items, result.totalPages])
+
   function updateControls(nextControls: Partial<SearchControls>) {
     startTransition(() => {
       setControls((current) => ({ ...current, ...nextControls, page: nextControls.page ?? 1 }))

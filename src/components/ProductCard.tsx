@@ -37,7 +37,6 @@ function highlightText(text: string, query: string) {
 export function ProductCard({ item, query, tilt = 'none' }: ProductCardProps) {
   const tiltClass = tilt === 'left' ? '-rotate-2' : tilt === 'right' ? 'rotate-2' : ''
   const [imageFailed, setImageFailed] = useState(false)
-  const rating = Math.max(0, Math.min(5, Math.round(item.rating ?? 0)))
 
   return (
     <article
@@ -62,11 +61,7 @@ export function ProductCard({ item, query, tilt = 'none' }: ProductCardProps) {
       </div>
 
       <div className="mt-8">
-        <div className="mb-4 flex items-center gap-1 text-clay" aria-label={`${item.ratingLabel} rating`}>
-          {Array.from({ length: 5 }).map((_, index) => (
-            <Star key={index} className={`size-4 ${index < rating ? 'fill-current' : 'opacity-25'}`} />
-          ))}
-        </div>
+        <PreciseRating rating={item.rating} ratingLabel={item.ratingLabel} reviews={item.reviews} />
 
         <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
           <h3 className="font-serif text-[26px] font-bold uppercase leading-[1.02] tracking-[-0.025em] text-ink">
@@ -87,5 +82,32 @@ export function ProductCard({ item, query, tilt = 'none' }: ProductCardProps) {
         </span>
       ) : null}
     </article>
+  )
+}
+
+function PreciseRating({ rating, ratingLabel, reviews }: { rating: number | null; ratingLabel: string; reviews: number }) {
+  const safeRating = Math.max(0, Math.min(5, rating ?? 0))
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-2 text-clay" aria-label={`${ratingLabel} rating from ${reviews.toLocaleString()} reviews`}>
+      <span className="font-sans text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+        {rating === null ? 'New' : safeRating.toFixed(1)}
+      </span>
+      <span className="flex items-center gap-1" aria-hidden="true">
+        {Array.from({ length: 5 }).map((_, index) => {
+          const fillPercent = Math.max(0, Math.min(1, safeRating - index)) * 100
+
+          return (
+            <span key={index} className="relative grid size-4 place-items-center text-clay/25">
+              <Star className="size-4 fill-current" />
+              <span className="absolute inset-0 overflow-hidden text-clay" style={{ width: `${fillPercent}%` }}>
+                <Star className="size-4 fill-current" />
+              </span>
+            </span>
+          )
+        })}
+      </span>
+      <span className="font-sans text-[11px] font-semibold text-muted">({reviews.toLocaleString()})</span>
+    </div>
   )
 }
