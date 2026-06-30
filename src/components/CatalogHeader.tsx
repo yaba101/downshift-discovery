@@ -1,4 +1,4 @@
-import { ShoppingCart, UserRound } from 'lucide-react'
+import { Search, ShoppingBag, UserRound } from 'lucide-react'
 import type { SearchControls } from '../types/catalog'
 
 type CatalogHeaderProps = {
@@ -7,27 +7,28 @@ type CatalogHeaderProps = {
 
 export function CatalogHeader({ updateControls }: CatalogHeaderProps) {
   return (
-    <header className="mb-10 grid items-center gap-6 md:grid-cols-[180px_minmax(0,1fr)_180px]">
+    <header className="grid min-h-16 items-center gap-4 border-b border-line bg-paper px-5 py-4 md:grid-cols-[260px_minmax(0,1fr)_260px] lg:px-8">
       <button
         type="button"
-        className="justify-self-start transition hover:scale-105"
+        className="flex items-center gap-3 justify-self-start text-left transition hover:opacity-75"
         aria-label="Reset catalog"
         onClick={() => updateControls({ query: '', category: 'all', inStockOnly: false, priceRange: 'all', selectedTags: [] })}
       >
-        <img src="/catalog-logo.svg" alt="" className="h-9 w-auto" aria-hidden="true" />
+        <img src="/downshift-logo.png" alt="" className="size-9 object-contain" aria-hidden="true" />
+        <span className="text-sm font-extrabold uppercase tracking-[0.18em] text-ink">Downshift</span>
       </button>
 
-      <nav className="flex flex-wrap items-center gap-7 text-[18px] font-extrabold text-olive/50 md:justify-center lg:gap-11">
-        <span className="transition hover:text-olive">Home</span>
-        <span className="text-olive">Catalog</span>
-        <span className="transition hover:text-olive">Instructions</span>
-        <span className="transition hover:text-olive">FAQ</span>
-        <span className="transition hover:text-olive">About us</span>
+      <nav className="flex flex-wrap items-center gap-7 text-sm font-bold uppercase tracking-[0.16em] text-muted md:justify-center">
+        <span className="transition hover:text-ink">Home</span>
+        <span className="text-ink">Catalog</span>
+        <span className="transition hover:text-ink">Search</span>
+        <span className="transition hover:text-ink">About</span>
       </nav>
 
-      <div className="flex items-center gap-6 text-olive md:justify-self-end">
-        <ShoppingCart className="size-7 stroke-[2.4]" />
-        <UserRound className="size-7 stroke-[2.4]" />
+      <div className="flex items-center gap-5 text-ink md:justify-self-end">
+        <Search className="size-5 stroke-[2.2]" />
+        <ShoppingBag className="size-5 stroke-[2.2]" />
+        <UserRound className="size-5 stroke-[2.2]" />
       </div>
     </header>
   )

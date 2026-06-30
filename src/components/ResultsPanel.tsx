@@ -1,8 +1,6 @@
 import { ProductCard } from './ProductCard'
-import { Badge } from './ui/badge'
 import { Button } from './ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import type { RankedItem, SearchControls, SortMode } from '../types/catalog'
+import type { RankedItem, SearchControls } from '../types/catalog'
 
 type ResultsPanelProps = {
   controls: SearchControls
@@ -31,17 +29,6 @@ function getVisiblePages(currentPage: number, totalPages: number) {
     .sort((a, b) => a - b)
 }
 
-function priceRangeLabel(value: SearchControls['priceRange']) {
-  const labels = {
-    all: 'All prices',
-    'under-250': 'Under $250',
-    '250-750': '$250-750',
-    '750-1500': '$750-1,500',
-    '1500-plus': '$1,500+',
-  }
-  return labels[value]
-}
-
 export function ResultsPanel({
   controls,
   debouncedQuery,
@@ -55,79 +42,37 @@ export function ResultsPanel({
   const visiblePages = getVisiblePages(currentPage, result.totalPages)
   const pageStart = result.totalItems === 0 ? 0 : (currentPage - 1) * 12 + 1
   const pageEnd = Math.min(currentPage * 12, result.totalItems)
-  const { hasActiveSearch, hasFilters, isError, isLoading, isPending } = status
-  const resultWord = result.totalItems === 1 ? 'result' : 'results'
+  const { isError, isLoading, isPending } = status
 
   return (
     <div className="min-w-0">
-      <div className="mb-7 flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-        <div className="min-w-0">
-          <h1 id="results-heading" className="font-serif text-[24px] font-medium tracking-[-0.04em] text-olive">
-            Showing <span className="font-extrabold">{result.totalItems.toLocaleString()} {resultWord}</span>
-          </h1>
-          <p className="mt-1 text-sm font-extrabold text-olive/50">
-            {isLoading ? 'Loading catalog' : `${pageStart.toLocaleString()}-${pageEnd.toLocaleString()} on this page`}
-            {isPending ? ' · Updating' : ''}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <span className="text-[18px] font-extrabold text-olive">Sort by</span>
-          <Select value={controls.sortMode} onValueChange={(value) => updateControls({ sortMode: value as SortMode })}>
-            <SelectTrigger className="h-11 min-w-[240px] rounded-full border-0 bg-white px-5 text-[15px] font-extrabold text-olive shadow-none [&_svg]:size-8 [&_svg]:rounded-full [&_svg]:bg-olive [&_svg]:p-1.5 [&_svg]:text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="featured">Featured</SelectItem>
-              <SelectItem value="relevance">Relevance</SelectItem>
-              <SelectItem value="price-asc">Price (from low to high)</SelectItem>
-              <SelectItem value="price-desc">Price (from high to low)</SelectItem>
-              <SelectItem value="rating">Top rated</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {hasFilters ? (
-        <div className="mb-8 flex flex-wrap items-center gap-2">
-          {hasActiveSearch ? <Badge className="px-4 py-2 text-[14px] font-extrabold">Search: {debouncedQuery} ×</Badge> : null}
-          {controls.category !== 'all' ? <Badge className="px-4 py-2 text-[14px] font-extrabold">{controls.category} ×</Badge> : null}
-          {controls.priceRange !== 'all' ? (
-            <Badge className="px-4 py-2 text-[14px] font-extrabold">Price range: {priceRangeLabel(controls.priceRange)} ×</Badge>
-          ) : null}
-          {controls.inStockOnly ? <Badge className="px-4 py-2 text-[14px] font-extrabold">In stock ×</Badge> : null}
-          {controls.selectedTags.map((tag) => (
-            <Badge key={tag} className="px-4 py-2 text-[14px] font-extrabold">{tag} ×</Badge>
-          ))}
-          <button type="button" className="ml-1 text-[14px] font-extrabold underline underline-offset-4" onClick={resetControls}>
-            Clear all
-          </button>
-        </div>
+      {isPending ? (
+        <p className="border-b border-line px-5 py-2 text-xs font-bold uppercase tracking-[0.18em] text-muted">Updating results</p>
       ) : null}
 
       {isLoading ? (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid border-l border-line md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 9 }).map((_, index) => (
-            <div key={index} className="h-[360px] animate-pulse rounded-[30px] bg-card-cream" />
+            <div key={index} className="h-[470px] animate-pulse border-b border-r border-line bg-mist/40" />
           ))}
         </div>
       ) : null}
 
       {isError ? (
-        <div className="rounded-[30px] bg-card-cream p-10 text-center text-olive">
-          <h2 className="text-3xl font-black">The catalog did not load.</h2>
-          <p className="mx-auto mt-3 max-w-xl text-olive/60">The local product file could not be read.</p>
-          <Button type="button" className="mt-5 rounded-full" onClick={refetch}>
+        <div className="border-b border-line p-10 text-center text-ink">
+          <h2 className="font-serif text-5xl font-black uppercase tracking-[-0.04em]">The catalog did not load.</h2>
+          <p className="mx-auto mt-3 max-w-xl text-muted">The local product file could not be read.</p>
+          <Button type="button" className="mt-5 rounded-none" onClick={refetch}>
             Retry
           </Button>
         </div>
       ) : null}
 
       {!isLoading && !isError && result.totalItems === 0 ? (
-        <div className="rounded-[30px] bg-card-cream p-10 text-center text-olive">
-          <h2 className="text-3xl font-black">No matching pieces.</h2>
-          <p className="mx-auto mt-3 max-w-xl text-olive/60">Try a broader search or clear one of the active filters.</p>
-          <Button type="button" className="mt-5 rounded-full" onClick={resetControls}>
+        <div className="border-b border-line p-10 text-center text-ink">
+          <h2 className="font-serif text-5xl font-black uppercase tracking-[-0.04em]">No matching pieces.</h2>
+          <p className="mx-auto mt-3 max-w-xl text-muted">Try a broader search or clear one of the active filters.</p>
+          <Button type="button" className="mt-5 rounded-none" onClick={resetControls}>
             Clear filters
           </Button>
         </div>
@@ -135,32 +80,32 @@ export function ResultsPanel({
 
       {!isLoading && !isError && result.totalItems > 0 ? (
         <>
-          <ul className="grid list-none gap-5 p-0 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid list-none border-l border-line p-0 md:grid-cols-2 xl:grid-cols-3">
             {result.items.map((item) => (
-              <li key={item.id}>
+              <li key={item.id} className="border-b border-r border-line">
                 <ProductCard item={item} query={debouncedQuery} tilt="none" />
               </li>
             ))}
           </ul>
 
-          <nav className="mt-12 flex flex-col items-center gap-3 text-olive" aria-label="Results pagination">
-            <div className="flex flex-wrap items-center justify-center gap-2.5">
+          <nav className="flex flex-col items-center gap-3 border-b border-line px-5 py-8 text-ink" aria-label="Results pagination">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <Button
                 type="button"
-                variant="soft"
-                className="h-10 rounded-full px-4 text-[14px] font-extrabold"
+                variant="outline"
+                className="h-10 rounded-none border-line bg-transparent px-4 text-[13px] font-bold uppercase tracking-[0.12em]"
                 disabled={currentPage <= 1}
                 onClick={() => updateControls({ page: currentPage - 1 })}
               >
-                ‹ Back
+                Back
               </Button>
               {visiblePages.map((page) => (
                 <button
                   type="button"
                   key={page}
                   onClick={() => updateControls({ page })}
-                  className={`grid size-10 place-items-center rounded-full text-sm font-extrabold transition ${
-                    currentPage === page ? 'bg-olive text-white' : 'bg-white text-olive hover:bg-sage-button'
+                  className={`grid size-10 place-items-center border border-line text-sm font-bold transition ${
+                    currentPage === page ? 'bg-ink text-paper' : 'bg-transparent text-ink hover:bg-mist'
                   }`}
                   aria-current={currentPage === page ? 'page' : undefined}
                 >
@@ -170,25 +115,25 @@ export function ResultsPanel({
               <Button
                 type="button"
                 variant="default"
-                className="h-10 rounded-full px-4 text-[14px] font-extrabold"
+                className="h-10 rounded-none bg-ink px-4 text-[13px] font-bold uppercase tracking-[0.12em] text-paper"
                 disabled={currentPage >= result.totalPages}
                 onClick={() => updateControls({ page: currentPage + 1 })}
               >
-                Next ›
+                Next
               </Button>
-              <div className="ml-2 flex h-10 items-center gap-2 rounded-full bg-white px-5 text-[14px] font-extrabold text-olive/50">
+              <div className="ml-2 flex h-10 items-center gap-2 border border-line px-4 text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
                 Page
-                <span className="text-olive">{currentPage}</span>
+                <span className="text-ink">{currentPage}</span>
               </div>
               <button
                 type="button"
-                className="grid h-10 min-w-12 place-items-center rounded-full bg-olive px-4 text-[14px] font-extrabold text-white transition hover:bg-olive/90"
+                className="grid h-10 min-w-12 place-items-center bg-ink px-4 text-[13px] font-bold uppercase tracking-[0.12em] text-paper transition hover:bg-ink/90"
                 onClick={() => updateControls({ page: currentPage })}
               >
                 Go
               </button>
             </div>
-            <p className="w-full max-w-[560px] text-left text-[14px] font-extrabold">
+            <p className="text-sm font-semibold text-muted">
               {pageStart.toLocaleString()}-{pageEnd.toLocaleString()} of {result.totalItems.toLocaleString()}
             </p>
           </nav>

@@ -1,26 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800;900&family=Rubik:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: 'Nunito Sans', sans-serif;
-  --font-serif: 'Rubik', sans-serif;
-  --color-porcelain: #fafaf9;
-  --color-paper: #f8faf6;
-  --color-ink: #283018;
-  --color-muted: #8a9184;
-  --color-line: #c9d0c4;
-  --color-mist: #edf1ed;
-  --color-sage: #2e725f;
-  --color-clay: #a3482f;
-  --color-honey: #a16207;
-  --color-cobalt: #1e3a5f;
-  --color-plum: #5c465e;
-  --color-sage-frame: #9caa85;
-  --color-catalog-canvas: #e9ece9;
-  --color-catalog-panel: #eef1ee;
-  --color-card-cream: #fbfdf8;
-  --color-olive: #303914;
-  --color-sage-button: #a9b0a3;
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: 'Barlow Condensed', sans-serif;
+  --color-porcelain: #fffaf3;
+  --color-paper: #fff8ef;
+  --color-ink: #303030;
+  --color-muted: #77746e;
+  --color-line: #8e8a80;
+  --color-mist: #f1e9dd;
+  --color-sage: #164f46;
+  --color-clay: #bd4d20;
+  --color-honey: #d6652d;
+  --color-cobalt: #303030;
+  --color-plum: #303030;
+  --color-sage-frame: #164f46;
+  --color-catalog-canvas: #fff8ef;
+  --color-catalog-panel: #fff8ef;
+  --color-card-cream: #fff8ef;
+  --color-olive: #303030;
+  --color-sage-button: #f1e9dd;
 }
 
 * {
@@ -28,8 +28,8 @@
 }
 
 html {
-  background: #9ba889;
-  color: #303b16;
+  background: #fff8ef;
+  color: #303030;
   font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -40,9 +40,7 @@ html {
 body {
   min-width: 320px;
   margin: 0;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(238, 241, 237, 0.35), transparent 34rem),
-    #9ba889;
+  background: #fff8ef;
 }
 
 button,

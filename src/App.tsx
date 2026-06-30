@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState, useTransition } from 'react'
 import { CatalogHeader } from './components/CatalogHeader'
 import { FilterSidebar } from './components/FilterSidebar'
 import { ResultsPanel } from './components/ResultsPanel'
-import { filterAndRankItems, getCatalogFacets } from './lib/search'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
+import { filterAndRankItems, getCatalogFacets, PAGE_SIZE } from './lib/search'
 import { useCatalogItems } from './hooks/useCatalogItems'
-import type { SearchControls } from './types/catalog'
+import type { SearchControls, SortMode } from './types/catalog'
 
 const initialControls: SearchControls = {
   query: '',
@@ -64,11 +65,51 @@ function App() {
   }
 
   return (
-    <main className="min-h-screen bg-sage-frame p-3 sm:p-8 lg:p-10">
-      <div className="mx-auto max-w-[1420px] rounded-[34px] bg-catalog-canvas px-5 py-8 shadow-[0_30px_120px_rgba(41,54,34,0.22)] sm:px-8 lg:px-10">
+    <main className="min-h-screen bg-paper">
+      <div className="mx-auto max-w-[1680px] border-x border-line bg-paper">
         <CatalogHeader updateControls={updateControls} />
 
-        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
+        <section className="border-b border-line px-5 py-10 text-center md:py-14" aria-labelledby="results-heading">
+          <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.36em] text-muted">Product discovery</p>
+          <h1
+            id="results-heading"
+            className="font-serif text-[clamp(4.5rem,14vw,10.5rem)] font-black uppercase leading-[0.78] tracking-[-0.055em] text-ink"
+          >
+            Home Goods
+          </h1>
+        </section>
+
+        <section className="grid items-center gap-4 border-b border-line px-5 py-4 text-sm font-bold text-muted md:grid-cols-[1fr_auto_1fr] lg:px-8">
+          <p className="text-center md:text-right">
+            <span className="text-ink">{result.totalItems.toLocaleString()}</span> products
+          </p>
+          <div className="flex items-center justify-center gap-6">
+            <span>
+              Show <span className="text-ink">{PAGE_SIZE}</span>
+            </span>
+            <span className="hidden h-4 w-px bg-line/70 md:block" />
+            <span>
+              Page <span className="text-ink">{Math.min(controls.page, result.totalPages)}</span> of{' '}
+              <span className="text-ink">{result.totalPages.toLocaleString()}</span>
+            </span>
+          </div>
+          <div className="flex justify-center md:justify-start">
+            <Select value={controls.sortMode} onValueChange={(value) => updateControls({ sortMode: value as SortMode })}>
+              <SelectTrigger className="h-auto min-w-44 border-0 bg-transparent p-0 text-sm font-bold text-muted shadow-none focus:ring-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="featured">Best selling</SelectItem>
+                <SelectItem value="relevance">Relevance</SelectItem>
+                <SelectItem value="price-asc">Price low to high</SelectItem>
+                <SelectItem value="price-desc">Price high to low</SelectItem>
+                <SelectItem value="rating">Top rated</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
+
+        <div className="grid lg:grid-cols-[360px_minmax(0,1fr)]">
           <FilterSidebar
             categories={facets.categories}
             chooseQuery={chooseQuery}
@@ -79,7 +120,7 @@ function App() {
             suggestions={querySuggestions}
             updateControls={updateControls}
           />
-          <section className="order-first min-w-0 lg:order-none" aria-labelledby="results-heading">
+          <section className="min-w-0">
             <ResultsPanel
               controls={controls}
               debouncedQuery={debouncedQuery}
