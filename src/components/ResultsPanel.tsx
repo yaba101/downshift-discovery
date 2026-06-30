@@ -24,10 +24,19 @@ type ResultsPanelProps = {
 }
 
 function getVisiblePages(currentPage: number, totalPages: number) {
-  const pages = new Set([1, 2, 3, 4, currentPage])
-  return Array.from(pages)
+  const pages = Array.from(new Set([1, 2, 3, 4, currentPage - 1, currentPage, currentPage + 1, totalPages]))
     .filter((page) => page >= 1 && page <= totalPages)
     .sort((a, b) => a - b)
+
+  return pages.flatMap((page, index) => {
+    const previousPage = pages[index - 1]
+
+    if (previousPage && page - previousPage > 1) {
+      return [`ellipsis-${previousPage}-${page}`, page] as const
+    }
+
+    return [page] as const
+  })
 }
 
 export function ResultsPanel({
@@ -107,19 +116,26 @@ export function ResultsPanel({
               >
                 Back
               </Button>
-              {visiblePages.map((page) => (
-                <button
-                  type="button"
-                  key={page}
-                  onClick={() => changePage(page)}
-                  className={`grid size-10 place-items-center border border-line text-sm font-bold transition ${
-                    currentPage === page ? 'bg-ink text-paper' : 'bg-transparent text-ink hover:bg-mist'
-                  }`}
-                  aria-current={currentPage === page ? 'page' : undefined}
-                >
-                  {page}
-                </button>
-              ))}
+              {visiblePages.map((page) =>
+                typeof page === 'string' ? (
+                  <span key={page} className="grid size-10 place-items-center text-sm font-black text-muted" aria-hidden="true">
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    key={page}
+                    onClick={() => changePage(page)}
+                    className={`grid size-10 place-items-center border border-line text-sm font-bold transition ${
+                      currentPage === page ? 'bg-ink text-paper' : 'bg-transparent text-ink hover:bg-mist'
+                    }`}
+                    aria-current={currentPage === page ? 'page' : undefined}
+                    aria-label={page === result.totalPages ? `Last page, page ${page}` : `Go to page ${page}`}
+                  >
+                    {page.toLocaleString()}
+                  </button>
+                ),
+              )}
               <Button
                 type="button"
                 variant="default"
@@ -168,19 +184,20 @@ function PageJump({
       <label className="ml-2 flex h-10 items-center gap-2 border border-line px-4 text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
         Page
         <input
-          type="number"
-          min={1}
-          max={totalPages}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={pageInput}
-          onChange={(event) => setPageInput(event.target.value)}
+          onChange={(event) => setPageInput(event.target.value.replace(/\D/g, ''))}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
               goToPageInput()
             }
           }}
-          className="w-16 bg-transparent text-center text-ink outline-none"
+          className="w-14 bg-transparent text-center text-ink outline-none"
           aria-label="Page number"
         />
+        <span className="whitespace-nowrap text-muted">of {totalPages.toLocaleString()}</span>
       </label>
       <button
         type="button"

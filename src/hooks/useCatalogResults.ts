@@ -16,11 +16,11 @@ function catalogResultsQueryKey(controls: SearchControls) {
   return [
     'catalog-results',
     {
+      page: controls.page,
       category: controls.category,
       customPriceMax: controls.customPriceMax,
       customPriceMin: controls.customPriceMin,
       inStockOnly: controls.inStockOnly,
-      page: controls.page,
       priceRange: controls.priceRange,
       query: controls.query.trim().toLowerCase(),
       selectedTags: [...controls.selectedTags].sort(),

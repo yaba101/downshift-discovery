@@ -3,22 +3,18 @@ import { CatalogHeader } from './components/CatalogHeader'
 import { FilterSidebar } from './components/FilterSidebar'
 import { ResultsPanel } from './components/ResultsPanel'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
+import {
+  DEFAULT_SEARCH_CONTROLS,
+  clearPersistedControls,
+  getInitialSearchControls,
+  persistControlsToStorage,
+  readControlsFromUrl,
+  replaceUrlWithControls,
+} from './lib/controlState'
 import { filterAndRankItems, getCatalogFacets, PAGE_SIZE } from './lib/search'
 import { useCatalogItems } from './hooks/useCatalogItems'
 import { useCatalogResults } from './hooks/useCatalogResults'
 import type { SearchControls, SortMode } from './types/catalog'
-
-const initialControls: SearchControls = {
-  query: '',
-  category: 'all',
-  inStockOnly: false,
-  priceRange: 'all',
-  customPriceMin: 0,
-  customPriceMax: 1500,
-  selectedTags: [],
-  sortMode: 'featured',
-  page: 1,
-}
 
 const CUSTOM_PRICE_FILTER_DEBOUNCE_MS = 1200
 
@@ -33,37 +29,83 @@ function useDebouncedValue<T>(value: T, delay = 180) {
   return debounced
 }
 
+function getCatalogSafeControls(controls: SearchControls, categories: string[], availableTags: Set<string>, hasCatalogItems: boolean) {
+  if (!hasCatalogItems) {
+    return controls
+  }
+
+  const category = controls.category === 'all' || categories.includes(controls.category) ? controls.category : 'all'
+  const selectedTags = controls.selectedTags.filter((tag) => availableTags.has(tag))
+
+  if (category === controls.category && selectedTags.length === controls.selectedTags.length) {
+    return controls
+  }
+
+  return {
+    ...controls,
+    category,
+    selectedTags,
+  }
+}
+
 function App() {
   const { data: items = [], isLoading, isError, refetch } = useCatalogItems()
-  const [controls, setControls] = useState<SearchControls>(initialControls)
+  const [controls, setControls] = useState<SearchControls>(getInitialSearchControls)
   const [isPending, startTransition] = useTransition()
   const debouncedQuery = useDebouncedValue(controls.query)
   const debouncedCustomPriceMin = useDebouncedValue(controls.customPriceMin, CUSTOM_PRICE_FILTER_DEBOUNCE_MS)
   const debouncedCustomPriceMax = useDebouncedValue(controls.customPriceMax, CUSTOM_PRICE_FILTER_DEBOUNCE_MS)
 
   const facets = useMemo(() => getCatalogFacets(items), [items])
+  const availableTags = useMemo(() => new Set(items.flatMap((item) => item.tags)), [items])
+  const catalogSafeControls = useMemo(
+    () => getCatalogSafeControls(controls, facets.categories, availableTags, items.length > 0),
+    [availableTags, controls, facets.categories, items.length],
+  )
   const activeControls = useMemo(
     () => ({
-      ...controls,
-      customPriceMax: controls.priceRange === 'custom' ? debouncedCustomPriceMax : controls.customPriceMax,
-      customPriceMin: controls.priceRange === 'custom' ? debouncedCustomPriceMin : controls.customPriceMin,
+      ...catalogSafeControls,
+      customPriceMax: catalogSafeControls.priceRange === 'custom' ? debouncedCustomPriceMax : catalogSafeControls.customPriceMax,
+      customPriceMin: catalogSafeControls.priceRange === 'custom' ? debouncedCustomPriceMin : catalogSafeControls.customPriceMin,
       query: debouncedQuery,
     }),
-    [controls, debouncedCustomPriceMax, debouncedCustomPriceMin, debouncedQuery],
+    [catalogSafeControls, debouncedCustomPriceMax, debouncedCustomPriceMin, debouncedQuery],
   )
   const { data: result } = useCatalogResults(items, activeControls)
+  const shareableControls = useMemo(
+    () => ({
+      ...catalogSafeControls,
+      page: Math.min(catalogSafeControls.page, result.totalPages),
+    }),
+    [catalogSafeControls, result.totalPages],
+  )
   const hasActiveSearch = debouncedQuery.trim().length > 0
   const hasFilters =
-    controls.category !== 'all' ||
-    controls.inStockOnly ||
-    controls.priceRange !== 'all' ||
-    controls.selectedTags.length > 0 ||
+    shareableControls.category !== 'all' ||
+    shareableControls.inStockOnly ||
+    shareableControls.priceRange !== 'all' ||
+    shareableControls.selectedTags.length > 0 ||
     hasActiveSearch
 
   const querySuggestions = useMemo(
-    () => (controls.query.trim() ? result.items.slice(0, 5).map((item) => item.title) : []),
-    [controls.query, result.items],
+    () => (catalogSafeControls.query.trim() ? result.items.slice(0, 5).map((item) => item.title) : []),
+    [catalogSafeControls.query, result.items],
   )
+
+  useEffect(() => {
+    persistControlsToStorage(shareableControls)
+    replaceUrlWithControls(shareableControls)
+  }, [shareableControls])
+
+  useEffect(() => {
+    function syncControlsFromHistory() {
+      const urlControls = readControlsFromUrl()
+      setControls(urlControls ?? DEFAULT_SEARCH_CONTROLS)
+    }
+
+    window.addEventListener('popstate', syncControlsFromHistory)
+    return () => window.removeEventListener('popstate', syncControlsFromHistory)
+  }, [])
 
   useEffect(() => {
     if (items.length === 0 || result.totalPages <= 1) {
@@ -92,7 +134,11 @@ function App() {
 
   function updateControls(nextControls: Partial<SearchControls>) {
     startTransition(() => {
-      setControls((current) => ({ ...current, ...nextControls, page: nextControls.page ?? 1 }))
+      setControls((current) => ({
+        ...getCatalogSafeControls(current, facets.categories, availableTags, items.length > 0),
+        ...nextControls,
+        page: nextControls.page ?? 1,
+      }))
     })
   }
 
@@ -101,7 +147,8 @@ function App() {
   }
 
   function resetControls() {
-    startTransition(() => setControls(initialControls))
+    clearPersistedControls()
+    startTransition(() => setControls(DEFAULT_SEARCH_CONTROLS))
   }
 
   return (
@@ -154,7 +201,7 @@ function App() {
           <FilterSidebar
             categories={facets.categories}
             chooseQuery={chooseQuery}
-            controls={controls}
+            controls={shareableControls}
             hasFilters={hasFilters}
             popularTags={facets.popularTags}
             resetControls={resetControls}
@@ -163,7 +210,7 @@ function App() {
           />
           <section className="min-w-0">
             <ResultsPanel
-              controls={controls}
+              controls={shareableControls}
               debouncedQuery={debouncedQuery}
               refetch={() => void refetch()}
               resetControls={resetControls}
