@@ -74,3 +74,37 @@ button:disabled {
   -webkit-line-clamp: 2;
   overflow: hidden;
 }
+
+.dual-range-input {
+  appearance: none;
+  cursor: grab;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dual-range-input:active {
+  cursor: grabbing;
+}
+
+.dual-range-input::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.dual-range-input::-webkit-slider-thumb {
+  appearance: none;
+  height: 28px;
+  width: 28px;
+  pointer-events: auto;
+}
+
+.dual-range-input::-moz-range-track {
+  background: transparent;
+}
+
+.dual-range-input::-moz-range-thumb {
+  height: 28px;
+  width: 28px;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+}

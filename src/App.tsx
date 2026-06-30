@@ -122,7 +122,8 @@ function App() {
           </div>
           <div className="flex justify-center md:justify-start">
             <Select value={controls.sortMode} onValueChange={(value) => updateControls({ sortMode: value as SortMode })}>
-              <SelectTrigger className="h-auto min-w-44 border-0 bg-transparent p-0 text-sm font-semibold text-muted shadow-none focus:ring-0">
+              <SelectTrigger className="h-11 min-w-56 rounded-none border border-line bg-paper px-4 text-sm font-bold text-ink shadow-[4px_4px_0_rgba(48,48,48,0.08)] transition hover:bg-mist focus:ring-1 focus:ring-ink [&>svg]:size-5 [&>svg]:text-ink">
+                <span className="mr-2 text-[11px] uppercase tracking-[0.16em] text-muted">Sort</span>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

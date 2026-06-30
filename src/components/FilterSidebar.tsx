@@ -1,6 +1,8 @@
 import { CheckCircle2, ChevronUp, Circle, Search, X } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 import { Input } from './ui/input'
+import { useFilterSectionStore, type FilterSectionId } from '../stores/filterSections'
 import type { PriceRange, SearchControls } from '../types/catalog'
 
 const priceRanges: Array<{ label: string; value: PriceRange }> = [
@@ -41,6 +43,11 @@ export function FilterSidebar({
   resetControls,
   updateControls,
 }: FilterSidebarProps) {
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const customMinPercent = priceToPercent(controls.customPriceMin)
+  const customMaxPercent = priceToPercent(controls.customPriceMax)
+  const hasSuggestions = showSuggestions && controls.query.trim() && suggestions.length > 0
+
   function toggleTag(tag: string) {
     const selectedTags = controls.selectedTags.includes(tag)
       ? controls.selectedTags.filter((selected) => selected !== tag)
@@ -57,6 +64,11 @@ export function FilterSidebar({
       customPriceMin: Math.min(nextMin, nextMax),
       customPriceMax: Math.max(nextMin, nextMax),
     })
+  }
+
+  function chooseSuggestion(suggestion: string) {
+    chooseQuery(suggestion)
+    setShowSuggestions(false)
   }
 
   return (
@@ -109,7 +121,7 @@ export function FilterSidebar({
           </div>
         ) : null}
 
-        <FilterGroup title="Search">
+        <FilterGroup id="search" title="Search">
           <div className="relative">
             <label htmlFor="sidebar-search" className="sr-only">
               Search products
@@ -117,21 +129,26 @@ export function FilterSidebar({
             <Input
               id="sidebar-search"
               value={controls.query}
-              onChange={(event) => updateControls({ query: event.target.value })}
+              onChange={(event) => {
+                setShowSuggestions(true)
+                updateControls({ query: event.target.value })
+              }}
+              onFocus={() => setShowSuggestions(true)}
               className="h-11 rounded-none border-line bg-transparent pl-4 pr-11 text-sm font-semibold shadow-none placeholder:text-muted focus-visible:ring-1 focus-visible:ring-ink"
               placeholder="Search catalog"
             />
             <Search className="absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
           </div>
-          {controls.query.trim() && suggestions.length > 0 ? (
-            <div className="mt-2 border border-line bg-paper shadow-[6px_6px_0_rgba(48,48,48,0.08)]" aria-label="Search suggestions">
+          {hasSuggestions ? (
+            <div className="-mt-px border border-line bg-paper shadow-[6px_6px_0_rgba(48,48,48,0.08)]" aria-label="Search suggestions">
               <p className="border-b border-line px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Suggestions</p>
               {suggestions.slice(0, 3).map((suggestion) => (
                 <button
                   type="button"
                   key={suggestion}
                   className="flex w-full items-center gap-3 border-b border-line/60 px-4 py-3 text-left text-sm font-semibold text-muted transition last:border-b-0 hover:bg-mist hover:text-ink"
-                  onClick={() => chooseQuery(suggestion)}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => chooseSuggestion(suggestion)}
                 >
                   <Search className="size-4 shrink-0" />
                   <span className="truncate">{suggestion}</span>
@@ -141,7 +158,7 @@ export function FilterSidebar({
           ) : null}
         </FilterGroup>
 
-        <FilterGroup title="Category">
+        <FilterGroup id="category" title="Category">
           <div className="space-y-3">
             {['all', ...categories].map((category) => {
               const active = controls.category === category
@@ -157,7 +174,7 @@ export function FilterSidebar({
           </div>
         </FilterGroup>
 
-        <FilterGroup title="Availability">
+        <FilterGroup id="availability" title="Availability">
           <FilterOption
             active={controls.inStockOnly}
             label="In stock only"
@@ -165,7 +182,7 @@ export function FilterSidebar({
           />
         </FilterGroup>
 
-        <FilterGroup title="Price">
+        <FilterGroup id="price" title="Price">
           <div className="space-y-3">
             {priceRanges.map((range) => (
               <FilterOption
@@ -176,61 +193,89 @@ export function FilterSidebar({
               />
             ))}
           </div>
-          <div className="mt-5 space-y-4 border-t border-line/70 pt-5">
-            <div className="grid grid-cols-2 gap-3">
-              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-                Min
+          {controls.priceRange === 'custom' ? (
+            <div className="mt-5 border border-line bg-paper p-4 shadow-[5px_5px_0_rgba(48,48,48,0.08)]">
+              <div className="mb-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+                <span>${controls.customPriceMin.toLocaleString()}</span>
+                <span>${controls.customPriceMax.toLocaleString()}</span>
+              </div>
+
+              <div className="relative mb-5 h-8">
+                <div className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-line" aria-hidden="true" />
+                <div
+                  className="absolute top-1/2 h-1 -translate-y-1/2 bg-ink"
+                  style={{ left: `${customMinPercent}%`, right: `${100 - customMaxPercent}%` }}
+                  aria-hidden="true"
+                />
+                <span
+                  className="absolute top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-ink bg-ink shadow-[0_0_0_4px_var(--color-paper)]"
+                  style={{ left: `${customMinPercent}%` }}
+                  aria-hidden="true"
+                />
+                <span
+                  className="absolute top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-ink bg-ink shadow-[0_0_0_4px_var(--color-paper)]"
+                  style={{ left: `${customMaxPercent}%` }}
+                  aria-hidden="true"
+                />
+                <label className="sr-only" htmlFor="custom-price-min">
+                  Minimum custom price
+                </label>
                 <input
-                  type="number"
+                  id="custom-price-min"
+                  type="range"
                   min={MIN_PRICE}
                   max={MAX_PRICE}
                   step={PRICE_STEP}
                   value={controls.customPriceMin}
                   onChange={(event) => updateCustomPrice({ min: Number(event.target.value) })}
-                  className="h-10 w-full border border-line bg-transparent px-3 text-sm font-semibold text-ink outline-none focus:ring-1 focus:ring-ink"
+                  className="dual-range-input absolute inset-0 h-8 w-full bg-transparent"
                 />
-              </label>
-              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-                Max
+                <label className="sr-only" htmlFor="custom-price-max">
+                  Maximum custom price
+                </label>
                 <input
-                  type="number"
+                  id="custom-price-max"
+                  type="range"
                   min={MIN_PRICE}
                   max={MAX_PRICE}
                   step={PRICE_STEP}
                   value={controls.customPriceMax}
                   onChange={(event) => updateCustomPrice({ max: Number(event.target.value) })}
-                  className="h-10 w-full border border-line bg-transparent px-3 text-sm font-semibold text-ink outline-none focus:ring-1 focus:ring-ink"
+                  className="dual-range-input absolute inset-0 h-8 w-full bg-transparent"
                 />
-              </label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="space-y-1 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+                  Min
+                  <input
+                    type="number"
+                    min={MIN_PRICE}
+                    max={MAX_PRICE}
+                    step={PRICE_STEP}
+                    value={controls.customPriceMin}
+                    onChange={(event) => updateCustomPrice({ min: Number(event.target.value) })}
+                    className="h-10 w-full border border-line bg-transparent px-3 text-sm font-bold text-ink outline-none focus:ring-1 focus:ring-ink"
+                  />
+                </label>
+                <label className="space-y-1 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+                  Max
+                  <input
+                    type="number"
+                    min={MIN_PRICE}
+                    max={MAX_PRICE}
+                    step={PRICE_STEP}
+                    value={controls.customPriceMax}
+                    onChange={(event) => updateCustomPrice({ max: Number(event.target.value) })}
+                    className="h-10 w-full border border-line bg-transparent px-3 text-sm font-bold text-ink outline-none focus:ring-1 focus:ring-ink"
+                  />
+                </label>
+              </div>
             </div>
-            <label className="block space-y-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-              Minimum price
-              <input
-                type="range"
-                min={MIN_PRICE}
-                max={MAX_PRICE}
-                step={PRICE_STEP}
-                value={controls.customPriceMin}
-                onChange={(event) => updateCustomPrice({ min: Number(event.target.value) })}
-                className="w-full accent-ink"
-              />
-            </label>
-            <label className="block space-y-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-              Maximum price
-              <input
-                type="range"
-                min={MIN_PRICE}
-                max={MAX_PRICE}
-                step={PRICE_STEP}
-                value={controls.customPriceMax}
-                onChange={(event) => updateCustomPrice({ max: Number(event.target.value) })}
-                className="w-full accent-ink"
-              />
-            </label>
-          </div>
+          ) : null}
         </FilterGroup>
 
-        <FilterGroup title="Tags">
+        <FilterGroup id="tags" title="Tags">
           <div className="flex flex-wrap gap-2">
             {popularTags.map((tag) => {
               const active = controls.selectedTags.includes(tag)
@@ -254,14 +299,28 @@ export function FilterSidebar({
   )
 }
 
-function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
+function FilterGroup({ id, title, children }: { id: FilterSectionId; title: string; children: ReactNode }) {
+  const isCollapsed = useFilterSectionStore((state) => state.collapsedSections[id] ?? false)
+  const toggleSection = useFilterSectionStore((state) => state.toggleSection)
+  const sectionContentId = `filter-section-${id}`
+
   return (
     <section className="border-t border-line py-6">
-      <h3 className="mb-5 flex items-center justify-between font-serif text-2xl font-bold uppercase tracking-[-0.025em]">
-        <span>{title}</span>
-        <ChevronUp className="size-5 stroke-[2.4]" />
+      <h3>
+        <button
+          type="button"
+          className="mb-5 flex w-full items-center justify-between font-serif text-2xl font-bold uppercase tracking-[-0.025em] text-ink transition hover:text-muted"
+          aria-controls={sectionContentId}
+          aria-expanded={!isCollapsed}
+          onClick={() => toggleSection(id)}
+        >
+          <span>{title}</span>
+          <ChevronUp className={`size-5 stroke-[2.4] transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
+        </button>
       </h3>
-      {children}
+      <div id={sectionContentId} hidden={isCollapsed}>
+        {children}
+      </div>
     </section>
   )
 }
@@ -298,4 +357,8 @@ function clampPrice(value: number) {
   }
 
   return Math.min(MAX_PRICE, Math.max(MIN_PRICE, Math.round(value / PRICE_STEP) * PRICE_STEP))
+}
+
+function priceToPercent(value: number) {
+  return ((clampPrice(value) - MIN_PRICE) / (MAX_PRICE - MIN_PRICE)) * 100
 }
