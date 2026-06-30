@@ -43,6 +43,8 @@ const controls: SearchControls = {
   category: 'all',
   inStockOnly: false,
   priceRange: 'all',
+  customPriceMin: 0,
+  customPriceMax: 1500,
   selectedTags: [],
   sortMode: 'relevance',
   page: 1,
@@ -79,5 +81,17 @@ describe('filterAndRankItems', () => {
 
     expect(result.totalItems).toBe(1)
     expect(result.items[0].title).toBe('Rattan Storage Crate')
+  })
+
+  it('filters by custom price inputs', () => {
+    const result = filterAndRankItems(items, {
+      ...controls,
+      priceRange: 'custom',
+      customPriceMin: 100,
+      customPriceMax: 150,
+    })
+
+    expect(result.totalItems).toBe(1)
+    expect(result.items[0].title).toBe('Compact Linen Lamp')
   })
 })

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ProductCard } from './ProductCard'
 import { Button } from './ui/button'
 import type { RankedItem, SearchControls } from '../types/catalog'
@@ -121,17 +122,7 @@ export function ResultsPanel({
               >
                 Next
               </Button>
-              <div className="ml-2 flex h-10 items-center gap-2 border border-line px-4 text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
-                Page
-                <span className="text-ink">{currentPage}</span>
-              </div>
-              <button
-                type="button"
-                className="grid h-10 min-w-12 place-items-center bg-ink px-4 text-[13px] font-bold uppercase tracking-[0.12em] text-paper transition hover:bg-ink/90"
-                onClick={() => updateControls({ page: currentPage })}
-              >
-                Go
-              </button>
+              <PageJump key={currentPage} currentPage={currentPage} totalPages={result.totalPages} updateControls={updateControls} />
             </div>
             <p className="text-sm font-semibold text-muted">
               {pageStart.toLocaleString()}-{pageEnd.toLocaleString()} of {result.totalItems.toLocaleString()}
@@ -140,5 +131,57 @@ export function ResultsPanel({
         </>
       ) : null}
     </div>
+  )
+}
+
+function PageJump({
+  currentPage,
+  totalPages,
+  updateControls,
+}: {
+  currentPage: number
+  totalPages: number
+  updateControls: (nextControls: Partial<SearchControls>) => void
+}) {
+  const [pageInput, setPageInput] = useState(String(currentPage))
+
+  function goToPageInput() {
+    const nextPage = Number(pageInput)
+
+    if (!Number.isFinite(nextPage)) {
+      setPageInput(String(currentPage))
+      return
+    }
+
+    updateControls({ page: Math.min(totalPages, Math.max(1, Math.trunc(nextPage))) })
+  }
+
+  return (
+    <>
+      <label className="ml-2 flex h-10 items-center gap-2 border border-line px-4 text-[13px] font-bold uppercase tracking-[0.12em] text-muted">
+        Page
+        <input
+          type="number"
+          min={1}
+          max={totalPages}
+          value={pageInput}
+          onChange={(event) => setPageInput(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              goToPageInput()
+            }
+          }}
+          className="w-16 bg-transparent text-center text-ink outline-none"
+          aria-label="Page number"
+        />
+      </label>
+      <button
+        type="button"
+        className="grid h-10 min-w-12 place-items-center bg-ink px-4 text-[13px] font-bold uppercase tracking-[0.12em] text-paper transition hover:bg-ink/90"
+        onClick={goToPageInput}
+      >
+        Go
+      </button>
+    </>
   )
 }

@@ -12,6 +12,8 @@ const initialControls: SearchControls = {
   category: 'all',
   inStockOnly: false,
   priceRange: 'all',
+  customPriceMin: 0,
+  customPriceMax: 1500,
   selectedTags: [],
   sortMode: 'featured',
   page: 1,
@@ -73,13 +75,13 @@ function App() {
           <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.36em] text-muted">Product discovery</p>
           <h1
             id="results-heading"
-            className="font-serif text-[clamp(4.5rem,14vw,10.5rem)] font-black uppercase leading-[0.78] tracking-[-0.055em] text-ink"
+            className="font-serif text-[clamp(3.8rem,11vw,8.5rem)] font-extrabold uppercase leading-[0.82] tracking-[-0.045em] text-ink"
           >
             Home Goods
           </h1>
         </section>
 
-        <section className="grid items-center gap-4 border-b border-line px-5 py-4 text-sm font-bold text-muted md:grid-cols-[1fr_auto_1fr] lg:px-8">
+        <section className="grid items-center gap-4 border-b border-line px-5 py-4 text-sm font-semibold text-muted md:grid-cols-[1fr_auto_1fr] lg:px-8">
           <p className="text-center md:text-right">
             <span className="text-ink">{result.totalItems.toLocaleString()}</span> products
           </p>
@@ -95,7 +97,7 @@ function App() {
           </div>
           <div className="flex justify-center md:justify-start">
             <Select value={controls.sortMode} onValueChange={(value) => updateControls({ sortMode: value as SortMode })}>
-              <SelectTrigger className="h-auto min-w-44 border-0 bg-transparent p-0 text-sm font-bold text-muted shadow-none focus:ring-0">
+              <SelectTrigger className="h-auto min-w-44 border-0 bg-transparent p-0 text-sm font-semibold text-muted shadow-none focus:ring-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

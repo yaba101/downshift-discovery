@@ -1,4 +1,4 @@
-import type { CatalogItem, PriceRange, RankedItem, SearchControls, SortMode } from '../types/catalog'
+import type { CatalogItem, RankedItem, SearchControls, SortMode } from '../types/catalog'
 
 export const PAGE_SIZE = 12
 
@@ -90,7 +90,9 @@ function sortRankedItems(items: RankedItem[], sortMode: SortMode, hasQuery: bool
   })
 }
 
-function matchesPriceRange(price: number | null, range: PriceRange) {
+function matchesPriceRange(price: number | null, controls: SearchControls) {
+  const range = controls.priceRange
+
   if (range === 'all') {
     return true
   }
@@ -111,6 +113,12 @@ function matchesPriceRange(price: number | null, range: PriceRange) {
     return price >= 750 && price < 1500
   }
 
+  if (range === 'custom') {
+    const min = Math.min(controls.customPriceMin, controls.customPriceMax)
+    const max = Math.max(controls.customPriceMin, controls.customPriceMax)
+    return price >= min && price <= max
+  }
+
   return price >= 1500
 }
 
@@ -128,7 +136,7 @@ export function filterAndRankItems(items: CatalogItem[], controls: SearchControl
       continue
     }
 
-    if (!matchesPriceRange(item.price, controls.priceRange)) {
+    if (!matchesPriceRange(item.price, controls)) {
       continue
     }
 

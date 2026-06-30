@@ -9,7 +9,12 @@ const priceRanges: Array<{ label: string; value: PriceRange }> = [
   { label: '$250-750', value: '250-750' },
   { label: '$750-1,500', value: '750-1500' },
   { label: '$1,500+', value: '1500-plus' },
+  { label: 'Custom', value: 'custom' },
 ]
+
+const MIN_PRICE = 0
+const MAX_PRICE = 2500
+const PRICE_STEP = 25
 
 type FilterSidebarProps = {
   categories: string[]
@@ -23,7 +28,7 @@ type FilterSidebarProps = {
 }
 
 function priceRangeLabel(value: PriceRange) {
-  return priceRanges.find((range) => range.value === value)?.label ?? 'Custom'
+  return priceRanges.find((range) => range.value === value)?.label ?? 'All'
 }
 
 export function FilterSidebar({
@@ -43,11 +48,22 @@ export function FilterSidebar({
     updateControls({ selectedTags })
   }
 
+  function updateCustomPrice(next: { min?: number; max?: number }) {
+    const nextMin = clampPrice(next.min ?? controls.customPriceMin)
+    const nextMax = clampPrice(next.max ?? controls.customPriceMax)
+
+    updateControls({
+      priceRange: 'custom',
+      customPriceMin: Math.min(nextMin, nextMax),
+      customPriceMax: Math.max(nextMin, nextMax),
+    })
+  }
+
   return (
     <aside className="border-b border-line bg-paper text-ink lg:border-b-0 lg:border-r">
       <div className="px-5 py-8 lg:px-7">
         <div className="mb-7 flex items-start justify-between gap-4">
-          <h2 className="font-serif text-4xl font-black uppercase leading-none tracking-[-0.04em]">Filter by</h2>
+          <h2 className="font-serif text-4xl font-bold uppercase leading-none tracking-[-0.035em]">Filter by</h2>
           {hasFilters ? (
             <button
               type="button"
@@ -61,12 +77,34 @@ export function FilterSidebar({
 
         {hasFilters ? (
           <div className="mb-7 flex flex-wrap gap-2">
-            {controls.query.trim() ? <ActiveFilterChip>Search: {controls.query.trim()}</ActiveFilterChip> : null}
-            {controls.category !== 'all' ? <ActiveFilterChip>{controls.category}</ActiveFilterChip> : null}
-            {controls.inStockOnly ? <ActiveFilterChip>In stock</ActiveFilterChip> : null}
-            {controls.priceRange !== 'all' ? <ActiveFilterChip>Price: {priceRangeLabel(controls.priceRange)}</ActiveFilterChip> : null}
+            {controls.query.trim() ? (
+              <ActiveFilterChip label={`Remove search filter ${controls.query.trim()}`} onRemove={() => updateControls({ query: '' })}>
+                Search: {controls.query.trim()}
+              </ActiveFilterChip>
+            ) : null}
+            {controls.category !== 'all' ? (
+              <ActiveFilterChip label={`Remove ${controls.category} category`} onRemove={() => updateControls({ category: 'all' })}>
+                {controls.category}
+              </ActiveFilterChip>
+            ) : null}
+            {controls.inStockOnly ? (
+              <ActiveFilterChip label="Remove in stock filter" onRemove={() => updateControls({ inStockOnly: false })}>
+                In stock
+              </ActiveFilterChip>
+            ) : null}
+            {controls.priceRange !== 'all' ? (
+              <ActiveFilterChip label="Remove price filter" onRemove={() => updateControls({ priceRange: 'all' })}>
+                Price: {controls.priceRange === 'custom' ? `$${controls.customPriceMin}-${controls.customPriceMax}` : priceRangeLabel(controls.priceRange)}
+              </ActiveFilterChip>
+            ) : null}
             {controls.selectedTags.map((tag) => (
-              <ActiveFilterChip key={tag}>{tag}</ActiveFilterChip>
+              <ActiveFilterChip
+                key={tag}
+                label={`Remove ${tag} tag`}
+                onRemove={() => updateControls({ selectedTags: controls.selectedTags.filter((selected) => selected !== tag) })}
+              >
+                {tag}
+              </ActiveFilterChip>
             ))}
           </div>
         ) : null}
@@ -136,6 +174,58 @@ export function FilterSidebar({
               />
             ))}
           </div>
+          <div className="mt-5 space-y-4 border-t border-line/70 pt-5">
+            <div className="grid grid-cols-2 gap-3">
+              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+                Min
+                <input
+                  type="number"
+                  min={MIN_PRICE}
+                  max={MAX_PRICE}
+                  step={PRICE_STEP}
+                  value={controls.customPriceMin}
+                  onChange={(event) => updateCustomPrice({ min: Number(event.target.value) })}
+                  className="h-10 w-full border border-line bg-transparent px-3 text-sm font-semibold text-ink outline-none focus:ring-1 focus:ring-ink"
+                />
+              </label>
+              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+                Max
+                <input
+                  type="number"
+                  min={MIN_PRICE}
+                  max={MAX_PRICE}
+                  step={PRICE_STEP}
+                  value={controls.customPriceMax}
+                  onChange={(event) => updateCustomPrice({ max: Number(event.target.value) })}
+                  className="h-10 w-full border border-line bg-transparent px-3 text-sm font-semibold text-ink outline-none focus:ring-1 focus:ring-ink"
+                />
+              </label>
+            </div>
+            <label className="block space-y-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+              Minimum price
+              <input
+                type="range"
+                min={MIN_PRICE}
+                max={MAX_PRICE}
+                step={PRICE_STEP}
+                value={controls.customPriceMin}
+                onChange={(event) => updateCustomPrice({ min: Number(event.target.value) })}
+                className="w-full accent-ink"
+              />
+            </label>
+            <label className="block space-y-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+              Maximum price
+              <input
+                type="range"
+                min={MIN_PRICE}
+                max={MAX_PRICE}
+                step={PRICE_STEP}
+                value={controls.customPriceMax}
+                onChange={(event) => updateCustomPrice({ max: Number(event.target.value) })}
+                className="w-full accent-ink"
+              />
+            </label>
+          </div>
         </FilterGroup>
 
         <FilterGroup title="Tags">
@@ -165,7 +255,7 @@ export function FilterSidebar({
 function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="border-t border-line py-6">
-      <h3 className="mb-5 flex items-center justify-between font-serif text-2xl font-black uppercase tracking-[-0.03em]">
+      <h3 className="mb-5 flex items-center justify-between font-serif text-2xl font-bold uppercase tracking-[-0.025em]">
         <span>{title}</span>
         <ChevronUp className="size-5 stroke-[2.4]" />
       </h3>
@@ -189,11 +279,21 @@ function FilterOption({ active, label, onClick }: { active: boolean; label: stri
   )
 }
 
-function ActiveFilterChip({ children }: { children: ReactNode }) {
+function ActiveFilterChip({ children, label, onRemove }: { children: ReactNode; label: string; onRemove: () => void }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-bold text-paper">
       {children}
-      <X className="size-3" />
+      <button type="button" aria-label={label} className="-mr-1 rounded-full p-0.5 transition hover:bg-paper/15" onClick={onRemove}>
+        <X className="size-3" />
+      </button>
     </span>
   )
+}
+
+function clampPrice(value: number) {
+  if (Number.isNaN(value)) {
+    return MIN_PRICE
+  }
+
+  return Math.min(MAX_PRICE, Math.max(MIN_PRICE, Math.round(value / PRICE_STEP) * PRICE_STEP))
 }

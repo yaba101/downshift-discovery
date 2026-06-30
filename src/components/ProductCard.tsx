@@ -69,10 +69,10 @@ export function ProductCard({ item, query, tilt = 'none' }: ProductCardProps) {
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
-          <h3 className="font-serif text-[30px] font-black uppercase leading-[0.95] tracking-[-0.04em] text-ink">
+          <h3 className="font-serif text-[26px] font-bold uppercase leading-[1.02] tracking-[-0.025em] text-ink">
             {highlightText(item.title, query)}
           </h3>
-          <p className="pt-1 font-serif text-[28px] font-black uppercase leading-none tracking-[-0.04em] text-ink">{item.priceLabel}</p>
+          <p className="pt-1 font-serif text-[25px] font-bold uppercase leading-none tracking-[-0.025em] text-ink">{item.priceLabel}</p>
         </div>
 
         <p className="mt-5 text-sm font-semibold text-muted">
