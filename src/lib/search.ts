@@ -1,6 +1,6 @@
-import type { CatalogItem, RankedItem, SearchControls, SortMode } from '../types/catalog'
+import type { CatalogItem, PriceRange, RankedItem, SearchControls, SortMode } from '../types/catalog'
 
-const PAGE_SIZE = 18
+export const PAGE_SIZE = 12
 
 type FilterResult = {
   items: RankedItem[]
@@ -90,6 +90,30 @@ function sortRankedItems(items: RankedItem[], sortMode: SortMode, hasQuery: bool
   })
 }
 
+function matchesPriceRange(price: number | null, range: PriceRange) {
+  if (range === 'all') {
+    return true
+  }
+
+  if (price === null) {
+    return false
+  }
+
+  if (range === 'under-250') {
+    return price < 250
+  }
+
+  if (range === '250-750') {
+    return price >= 250 && price < 750
+  }
+
+  if (range === '750-1500') {
+    return price >= 750 && price < 1500
+  }
+
+  return price >= 1500
+}
+
 export function filterAndRankItems(items: CatalogItem[], controls: SearchControls): FilterResult {
   const query = controls.query.trim()
   const hasQuery = query.length > 0
@@ -101,6 +125,14 @@ export function filterAndRankItems(items: CatalogItem[], controls: SearchControl
     }
 
     if (controls.inStockOnly && !item.inStock) {
+      continue
+    }
+
+    if (!matchesPriceRange(item.price, controls.priceRange)) {
+      continue
+    }
+
+    if (controls.selectedTags.length > 0 && !controls.selectedTags.every((tag) => item.tags.includes(tag))) {
       continue
     }
 
@@ -138,7 +170,7 @@ export function getCatalogFacets(items: CatalogItem[]) {
 
   const popularTags = Array.from(tagCounts.entries())
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, 10)
+    .slice(0, 14)
     .map(([tag]) => tag)
 
   return { categories, popularTags }

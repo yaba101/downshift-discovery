@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { CheckCircle2, CircleDollarSign, Grid2X2, Sparkles } from 'lucide-react'
 import { CatalogHeader } from './components/CatalogHeader'
-import { EditorialShelf } from './components/EditorialShelf'
-import { FilterRail } from './components/FilterRail'
+import { FilterSidebar } from './components/FilterSidebar'
 import { ResultsPanel } from './components/ResultsPanel'
-import { StatsStrip } from './components/StatsStrip'
 import { filterAndRankItems, getCatalogFacets } from './lib/search'
 import { useCatalogItems } from './hooks/useCatalogItems'
 import type { SearchControls } from './types/catalog'
@@ -13,6 +10,8 @@ const initialControls: SearchControls = {
   query: '',
   category: 'all',
   inStockOnly: false,
+  priceRange: 'all',
+  selectedTags: [],
   sortMode: 'featured',
   page: 1,
 }
@@ -38,29 +37,13 @@ function App() {
   const activeControls = useMemo(() => ({ ...controls, query: debouncedQuery }), [controls, debouncedQuery])
   const result = useMemo(() => filterAndRankItems(items, activeControls), [items, activeControls])
   const hasActiveSearch = debouncedQuery.trim().length > 0
-  const hasFilters = controls.category !== 'all' || controls.inStockOnly || hasActiveSearch
+  const hasFilters =
+    controls.category !== 'all' ||
+    controls.inStockOnly ||
+    controls.priceRange !== 'all' ||
+    controls.selectedTags.length > 0 ||
+    hasActiveSearch
 
-  const catalogStats = useMemo(() => {
-    const brands = new Set(items.map((item) => item.brand))
-    const priced = items.filter((item) => item.price !== null).length
-    const available = items.filter((item) => item.inStock).length
-
-    return [
-      { label: 'Products', value: items.length.toLocaleString(), icon: Grid2X2 },
-      { label: 'Makers', value: brands.size.toLocaleString(), icon: Sparkles },
-      { label: 'In stock', value: available.toLocaleString(), icon: CheckCircle2 },
-      { label: 'Priced', value: priced.toLocaleString(), icon: CircleDollarSign },
-    ]
-  }, [items])
-
-  const editorialItems = useMemo(
-    () =>
-      items
-        .filter((item) => item.inStock && item.image && item.rating && item.rating >= 4.6)
-        .sort((a, b) => b.reviews - a.reviews)
-        .slice(0, 3),
-    [items],
-  )
   const querySuggestions = useMemo(
     () => (controls.query.trim() ? result.items.slice(0, 5).map((item) => item.title) : []),
     [controls.query, result.items],
@@ -81,52 +64,35 @@ function App() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-sage-frame p-3 sm:p-8">
+      <div className="mx-auto max-w-[1500px] rounded-[34px] bg-catalog-canvas p-4 shadow-[0_30px_120px_rgba(41,54,34,0.22)] sm:p-8">
       <CatalogHeader
-        categories={facets.categories}
-        chooseQuery={chooseQuery}
-        controls={controls}
-        suggestions={querySuggestions}
         updateControls={updateControls}
       />
-      <StatsStrip isLoading={isLoading} stats={catalogStats} />
 
-      <div className="mx-auto grid max-w-[1500px] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:px-8">
-        <FilterRail
-          categories={facets.categories}
-          chooseQuery={chooseQuery}
-          controls={controls}
-          hasActiveSearch={hasActiveSearch}
-          hasFilters={hasFilters}
-          items={items}
-          popularTags={facets.popularTags}
-          resetControls={resetControls}
-          updateControls={updateControls}
-        />
-
-        <section className="min-w-0" aria-labelledby="results-heading">
-          {!hasActiveSearch && editorialItems.length > 0 ? (
-            <EditorialShelf
-              categoryCount={facets.categories.length}
-              chooseQuery={chooseQuery}
-              items={editorialItems}
-              totalItems={items.length}
-            />
-          ) : null}
+        <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <FilterSidebar
+            categories={facets.categories}
+            chooseQuery={chooseQuery}
+            controls={controls}
+            hasFilters={hasFilters}
+            popularTags={facets.popularTags}
+            resetControls={resetControls}
+            suggestions={querySuggestions}
+            updateControls={updateControls}
+          />
+          <section className="order-first min-w-0 lg:order-none" aria-labelledby="results-heading">
           <ResultsPanel
             controls={controls}
             debouncedQuery={debouncedQuery}
-            hasActiveSearch={hasActiveSearch}
-            hasFilters={hasFilters}
-            isError={isError}
-            isLoading={isLoading}
-            isPending={isPending}
             refetch={() => void refetch()}
             resetControls={resetControls}
             result={result}
+            status={{ hasActiveSearch, hasFilters, isError, isLoading, isPending }}
             updateControls={updateControls}
           />
         </section>
+      </div>
       </div>
     </main>
   )

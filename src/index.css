@@ -5,16 +5,22 @@
   --font-sans: 'Inter', sans-serif;
   --font-serif: 'Playfair Display', Georgia, serif;
   --color-porcelain: #fafaf9;
-  --color-paper: #fffdf8;
-  --color-ink: #1c1917;
-  --color-muted: #64748b;
-  --color-line: #d6d3d1;
-  --color-mist: #e8ecf0;
+  --color-paper: #f8faf6;
+  --color-ink: #283018;
+  --color-muted: #8a9184;
+  --color-line: #c9d0c4;
+  --color-mist: #edf1ed;
   --color-sage: #2e725f;
   --color-clay: #a3482f;
   --color-honey: #a16207;
   --color-cobalt: #1e3a5f;
   --color-plum: #5c465e;
+  --color-sage-frame: #9ba889;
+  --color-catalog-canvas: #e7ebe7;
+  --color-catalog-panel: #eef1ed;
+  --color-card-cream: #fbfdf8;
+  --color-olive: #303b16;
+  --color-sage-button: #aab1a3;
 }
 
 * {
@@ -22,8 +28,8 @@
 }
 
 html {
-  background: #fafaf9;
-  color: #1c1917;
+  background: #9ba889;
+  color: #303b16;
   font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -35,9 +41,8 @@ body {
   min-width: 320px;
   margin: 0;
   background:
-    linear-gradient(180deg, rgba(28, 25, 23, 0.06), transparent 360px),
-    linear-gradient(120deg, rgba(161, 98, 7, 0.08), transparent 36%),
-    #fafaf9;
+    radial-gradient(circle at 50% 0%, rgba(238, 241, 237, 0.35), transparent 34rem),
+    #9ba889;
 }
 
 button,

@@ -38,10 +38,14 @@ export type CatalogItem = {
 
 export type SortMode = 'featured' | 'relevance' | 'price-asc' | 'price-desc' | 'rating'
 
+export type PriceRange = 'all' | 'under-250' | '250-750' | '750-1500' | '1500-plus'
+
 export type SearchControls = {
   query: string
   category: string
   inStockOnly: boolean
+  priceRange: PriceRange
+  selectedTags: string[]
   sortMode: SortMode
   page: number
 }

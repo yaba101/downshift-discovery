@@ -7,7 +7,7 @@ Downshift Discovery is a premium home-goods catalog search experience. The inter
 ## Design Principles
 
 - Search-first: the search input is the main CTA and must be visible above the fold on mobile and desktop.
-- Catalog-first: results, filtering, and product metadata matter more than marketing copy.
+- Catalog-first: results, filtering, pagination, and product metadata matter more than marketing copy.
 - Editorial but efficient: use refined typography and spacing without hiding the catalog behind decorative layout.
 - Resilient data: missing price, image, rating, or description should look intentional.
 - No dead ends: empty states must suggest recovery paths.
@@ -17,7 +17,7 @@ Downshift Discovery is a premium home-goods catalog search experience. The inter
 
 - Style: premium editorial marketplace.
 - Mood: composed, trustworthy, curated, tactile.
-- Avoid: playful gradients, dark-mode dominance, purple defaults, oversized hero sections, nested cards, and low-density marketing layouts.
+- Avoid: playful gradients, purple defaults, stat blocks, decorative icon-heavy controls, oversized hero-only sections, sidebars for basic filters, popular-search blocks, editorial shelves, and low-density marketing layouts.
 - Imagery: product photos should be large enough to scan, cropped consistently, and treated as catalog assets rather than decoration.
 
 ## Tokens
@@ -48,7 +48,7 @@ Downshift Discovery is a premium home-goods catalog search experience. The inter
 ## Layout
 
 - Mobile: stacked search, filters, stats, and products with touch-friendly controls.
-- Desktop: search/header on top, stats strip, left filter rail, right product results.
+- Desktop: search/header with dropdown filters on top, then product results.
 - Result cards: 3-column max at wide desktop, 2-column tablet, 1-column mobile.
 - Fixed card media ratio: `4 / 3`.
 - Avoid nested cards. Repeated product items can be cards; page sections should be bands or panels.
@@ -57,9 +57,10 @@ Downshift Discovery is a premium home-goods catalog search experience. The inter
 
 - Search should debounce locally.
 - Show query suggestions while typing so users can recover quickly.
+- Keep filters as dropdown controls next to search, not chips or a left sidebar.
 - Filters reset pagination.
 - Active filters should be visible near result counts.
-- Pagination should be explicit and keyboard reachable.
+- Pagination should be explicit, keyboard reachable, numbered, and familiar.
 - Loading uses skeletons, not blank space.
 - TanStack Query Devtools should remain available during development.
 

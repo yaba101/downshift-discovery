@@ -42,6 +42,8 @@ const controls: SearchControls = {
   query: '',
   category: 'all',
   inStockOnly: false,
+  priceRange: 'all',
+  selectedTags: [],
   sortMode: 'relevance',
   page: 1,
 }
@@ -66,5 +68,16 @@ describe('filterAndRankItems', () => {
     })
 
     expect(result.totalItems).toBe(0)
+  })
+
+  it('filters by selected tags and price range', () => {
+    const result = filterAndRankItems(items, {
+      ...controls,
+      priceRange: 'under-250',
+      selectedTags: ['rattan'],
+    })
+
+    expect(result.totalItems).toBe(1)
+    expect(result.items[0].title).toBe('Rattan Storage Crate')
   })
 })
