@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ProductCard } from './ProductCard'
 import { Button } from './ui/button'
 import type { RankedItem, SearchControls } from '../types/catalog'
@@ -19,6 +19,7 @@ type ResultsPanelProps = {
     totalPages: number
   }
   refetch: () => void
+  prefetchPage: (page: number) => void
   resetControls: () => void
   updateControls: (nextControls: Partial<SearchControls>) => void
 }
@@ -45,6 +46,7 @@ export function ResultsPanel({
   status,
   result,
   refetch,
+  prefetchPage,
   resetControls,
   updateControls,
 }: ResultsPanelProps) {
@@ -56,9 +58,24 @@ export function ResultsPanel({
 
   function changePage(page: number) {
     updateControls({ page })
-    window.requestAnimationFrame(() => {
-      document.getElementById('catalog-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
+    window.setTimeout(() => {
+      const controlsBar = document.getElementById('catalog-controls')
+
+      if (!controlsBar) {
+        return
+      }
+
+      window.scrollTo({
+        behavior: 'smooth',
+        top: Math.max(0, controlsBar.getBoundingClientRect().top + window.scrollY - 16),
+      })
+    }, 80)
+  }
+
+  function prefetchSafePage(page: number) {
+    if (page >= 1 && page <= result.totalPages) {
+      prefetchPage(page)
+    }
   }
 
   return (
@@ -112,6 +129,8 @@ export function ResultsPanel({
                 variant="outline"
                 className="h-10 rounded-none border-line bg-transparent px-4 text-[13px] font-bold uppercase tracking-[0.12em]"
                 disabled={currentPage <= 1}
+                onFocus={() => prefetchSafePage(currentPage - 1)}
+                onMouseEnter={() => prefetchSafePage(currentPage - 1)}
                 onClick={() => changePage(currentPage - 1)}
               >
                 Back
@@ -125,6 +144,8 @@ export function ResultsPanel({
                   <button
                     type="button"
                     key={page}
+                    onFocus={() => prefetchSafePage(page)}
+                    onMouseEnter={() => prefetchSafePage(page)}
                     onClick={() => changePage(page)}
                     className={`grid size-10 place-items-center border border-line text-sm font-bold transition ${
                       currentPage === page ? 'bg-ink text-paper' : 'bg-transparent text-ink hover:bg-mist'
@@ -141,11 +162,19 @@ export function ResultsPanel({
                 variant="default"
                 className="h-10 rounded-none bg-ink px-4 text-[13px] font-bold uppercase tracking-[0.12em] text-paper"
                 disabled={currentPage >= result.totalPages}
+                onFocus={() => prefetchSafePage(currentPage + 1)}
+                onMouseEnter={() => prefetchSafePage(currentPage + 1)}
                 onClick={() => changePage(currentPage + 1)}
               >
                 Next
               </Button>
-              <PageJump key={currentPage} changePage={changePage} currentPage={currentPage} totalPages={result.totalPages} />
+              <PageJump
+                key={currentPage}
+                changePage={changePage}
+                currentPage={currentPage}
+                prefetchPage={prefetchSafePage}
+                totalPages={result.totalPages}
+              />
             </div>
             <p className="text-sm font-semibold text-muted">
               {pageStart.toLocaleString()}-{pageEnd.toLocaleString()} of {result.totalItems.toLocaleString()}
@@ -160,13 +189,26 @@ export function ResultsPanel({
 function PageJump({
   changePage,
   currentPage,
+  prefetchPage,
   totalPages,
 }: {
   changePage: (page: number) => void
   currentPage: number
+  prefetchPage: (page: number) => void
   totalPages: number
 }) {
   const [pageInput, setPageInput] = useState(String(currentPage))
+
+  useEffect(() => {
+    const nextPage = Number(pageInput)
+
+    if (!Number.isFinite(nextPage) || nextPage < 1 || nextPage > totalPages) {
+      return
+    }
+
+    const timeout = window.setTimeout(() => prefetchPage(Math.trunc(nextPage)), 180)
+    return () => window.clearTimeout(timeout)
+  }, [pageInput, prefetchPage, totalPages])
 
   function goToPageInput() {
     const nextPage = Number(pageInput)

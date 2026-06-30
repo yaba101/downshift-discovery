@@ -12,11 +12,13 @@ const emptyResult: FilterResult = {
   totalPages: 1,
 }
 
-function catalogResultsQueryKey(controls: SearchControls) {
+export function catalogResultsQueryKey(controls: SearchControls) {
   return [
     'catalog-results',
     {
       page: controls.page,
+    },
+    {
       category: controls.category,
       customPriceMax: controls.customPriceMax,
       customPriceMin: controls.customPriceMin,
@@ -27,6 +29,19 @@ function catalogResultsQueryKey(controls: SearchControls) {
       sortMode: controls.sortMode,
     },
   ] as const
+}
+
+export function prefetchCatalogResults(queryClient: ReturnType<typeof useQueryClient>, items: CatalogItem[], controls: SearchControls) {
+  if (items.length === 0) {
+    return Promise.resolve()
+  }
+
+  return queryClient.prefetchQuery({
+    gcTime: RESULT_GC_TIME,
+    queryFn: () => filterAndRankItems(items, controls),
+    queryKey: catalogResultsQueryKey(controls),
+    staleTime: RESULT_STALE_TIME,
+  })
 }
 
 export function useCatalogResults(items: CatalogItem[], controls: SearchControls) {
@@ -51,18 +66,13 @@ export function useCatalogResults(items: CatalogItem[], controls: SearchControls
     const pagesToPrefetch = [controls.page + 1, controls.page - 1].filter((page) => page >= 1 && page <= result.totalPages)
 
     for (const page of pagesToPrefetch) {
-      const pageControls = { ...controls, page }
-      void queryClient.prefetchQuery({
-        gcTime: RESULT_GC_TIME,
-        queryFn: () => filterAndRankItems(items, pageControls),
-        queryKey: catalogResultsQueryKey(pageControls),
-        staleTime: RESULT_STALE_TIME,
-      })
+      prefetchCatalogResults(queryClient, items, { ...controls, page })
     }
   }, [controls, hasItems, items, queryClient, result.totalPages])
 
   return {
     ...query,
     data: result,
+    prefetchPage: (page: number) => prefetchCatalogResults(queryClient, items, { ...controls, page }),
   }
 }

@@ -1,3 +1,4 @@
+import { parseAsArrayOf, parseAsBoolean, parseAsInteger, parseAsString, parseAsStringLiteral } from 'nuqs'
 import type { PriceRange, SearchControls, SortMode } from '../types/catalog'
 
 export const DEFAULT_SEARCH_CONTROLS: SearchControls = {
@@ -13,39 +14,31 @@ export const DEFAULT_SEARCH_CONTROLS: SearchControls = {
 }
 
 const STORAGE_KEY = 'downshift-search-controls'
-const sortModes: SortMode[] = ['featured', 'relevance', 'price-asc', 'price-desc', 'rating']
-const priceRanges: PriceRange[] = ['all', 'under-250', '250-750', '750-1500', '1500-plus', 'custom']
+const sortModes = ['featured', 'relevance', 'price-asc', 'price-desc', 'rating'] as const satisfies SortMode[]
+const priceRanges = ['all', 'under-250', '250-750', '750-1500', '1500-plus', 'custom'] as const satisfies PriceRange[]
 
-function parseNumber(value: string | null, fallback: number) {
-  if (value === null) {
-    return fallback
-  }
-
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : fallback
+export const catalogControlParsers = {
+  page: parseAsInteger.withDefault(DEFAULT_SEARCH_CONTROLS.page),
+  query: parseAsString.withDefault(DEFAULT_SEARCH_CONTROLS.query),
+  category: parseAsString.withDefault(DEFAULT_SEARCH_CONTROLS.category),
+  inStockOnly: parseAsBoolean.withDefault(DEFAULT_SEARCH_CONTROLS.inStockOnly),
+  priceRange: parseAsStringLiteral(priceRanges).withDefault(DEFAULT_SEARCH_CONTROLS.priceRange),
+  customPriceMin: parseAsInteger.withDefault(DEFAULT_SEARCH_CONTROLS.customPriceMin),
+  customPriceMax: parseAsInteger.withDefault(DEFAULT_SEARCH_CONTROLS.customPriceMax),
+  selectedTags: parseAsArrayOf(parseAsString, ',').withDefault(DEFAULT_SEARCH_CONTROLS.selectedTags),
+  sortMode: parseAsStringLiteral(sortModes).withDefault(DEFAULT_SEARCH_CONTROLS.sortMode),
 }
 
-function parsePositiveInteger(value: string | null, fallback: number) {
-  return Math.max(1, Math.trunc(parseNumber(value, fallback)))
-}
-
-function parseBoolean(value: string | null) {
-  return value === '1' || value === 'true'
-}
-
-function parseTags(value: string | null) {
-  if (!value) {
-    return []
-  }
-
-  return Array.from(
-    new Set(
-      value
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-    ),
-  )
+export const catalogControlUrlKeys = {
+  page: 'page',
+  query: 'q',
+  category: 'category',
+  inStockOnly: 'stock',
+  priceRange: 'price',
+  customPriceMin: 'min',
+  customPriceMax: 'max',
+  selectedTags: 'tags',
+  sortMode: 'sort',
 }
 
 function parseControls(source: Partial<Record<keyof SearchControls, unknown>>): SearchControls {
@@ -69,28 +62,9 @@ function parseControls(source: Partial<Record<keyof SearchControls, unknown>>): 
   }
 }
 
-function hasUrlControls(params: URLSearchParams) {
-  return ['q', 'category', 'stock', 'price', 'min', 'max', 'tags', 'sort', 'page'].some((key) => params.has(key))
-}
-
-export function readControlsFromUrl(search = window.location.search) {
+export function hasCatalogUrlControls(search = window.location.search) {
   const params = new URLSearchParams(search)
-
-  if (!hasUrlControls(params)) {
-    return null
-  }
-
-  return parseControls({
-    category: params.get('category') ?? DEFAULT_SEARCH_CONTROLS.category,
-    customPriceMax: parseNumber(params.get('max'), DEFAULT_SEARCH_CONTROLS.customPriceMax),
-    customPriceMin: parseNumber(params.get('min'), DEFAULT_SEARCH_CONTROLS.customPriceMin),
-    inStockOnly: parseBoolean(params.get('stock')),
-    page: parsePositiveInteger(params.get('page'), DEFAULT_SEARCH_CONTROLS.page),
-    priceRange: params.get('price') ?? DEFAULT_SEARCH_CONTROLS.priceRange,
-    query: params.get('q') ?? DEFAULT_SEARCH_CONTROLS.query,
-    selectedTags: parseTags(params.get('tags')),
-    sortMode: params.get('sort') ?? DEFAULT_SEARCH_CONTROLS.sortMode,
-  })
+  return ['q', 'category', 'stock', 'price', 'min', 'max', 'tags', 'sort', 'page'].some((key) => params.has(key))
 }
 
 export function readControlsFromStorage() {
@@ -107,61 +81,10 @@ export function readControlsFromStorage() {
   }
 }
 
-export function getInitialSearchControls() {
-  return readControlsFromUrl() ?? readControlsFromStorage() ?? DEFAULT_SEARCH_CONTROLS
-}
-
 export function persistControlsToStorage(controls: SearchControls) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(controls))
 }
 
 export function clearPersistedControls() {
   window.localStorage.removeItem(STORAGE_KEY)
-}
-
-export function controlsToSearchParams(controls: SearchControls) {
-  const params = new URLSearchParams()
-
-  if (controls.query.trim()) {
-    params.set('q', controls.query.trim())
-  }
-
-  if (controls.category !== DEFAULT_SEARCH_CONTROLS.category) {
-    params.set('category', controls.category)
-  }
-
-  if (controls.inStockOnly) {
-    params.set('stock', '1')
-  }
-
-  if (controls.priceRange !== DEFAULT_SEARCH_CONTROLS.priceRange) {
-    params.set('price', controls.priceRange)
-  }
-
-  if (controls.priceRange === 'custom') {
-    params.set('min', String(controls.customPriceMin))
-    params.set('max', String(controls.customPriceMax))
-  }
-
-  if (controls.selectedTags.length > 0) {
-    params.set('tags', [...controls.selectedTags].sort().join(','))
-  }
-
-  if (controls.sortMode !== DEFAULT_SEARCH_CONTROLS.sortMode) {
-    params.set('sort', controls.sortMode)
-  }
-
-  if (controls.page !== DEFAULT_SEARCH_CONTROLS.page) {
-    params.set('page', String(controls.page))
-  }
-
-  return params
-}
-
-export function replaceUrlWithControls(controls: SearchControls) {
-  const params = controlsToSearchParams(controls)
-  const nextSearch = params.toString()
-  const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`
-
-  window.history.replaceState(null, '', nextUrl)
 }

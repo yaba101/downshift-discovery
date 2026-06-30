@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { useQueryStates } from 'nuqs'
 import { CatalogHeader } from './components/CatalogHeader'
 import { FilterSidebar } from './components/FilterSidebar'
 import { ResultsPanel } from './components/ResultsPanel'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
 import {
   DEFAULT_SEARCH_CONTROLS,
+  catalogControlParsers,
+  catalogControlUrlKeys,
   clearPersistedControls,
-  getInitialSearchControls,
+  hasCatalogUrlControls,
   persistControlsToStorage,
-  readControlsFromUrl,
-  replaceUrlWithControls,
+  readControlsFromStorage,
 } from './lib/controlState'
 import { filterAndRankItems, getCatalogFacets, PAGE_SIZE } from './lib/search'
 import { useCatalogItems } from './hooks/useCatalogItems'
@@ -50,8 +52,23 @@ function getCatalogSafeControls(controls: SearchControls, categories: string[], 
 
 function App() {
   const { data: items = [], isLoading, isError, refetch } = useCatalogItems()
-  const [controls, setControls] = useState<SearchControls>(getInitialSearchControls)
   const [isPending, startTransition] = useTransition()
+  const initialControlsSnapshot = useMemo(() => {
+    const hasUrlControls = hasCatalogUrlControls()
+
+    return {
+      hasUrlControls,
+      storedControls: hasUrlControls ? null : readControlsFromStorage(),
+    }
+  }, [])
+  const skipNextPersistRef = useRef(false)
+  const [controls, setControls] = useQueryStates(catalogControlParsers, {
+    clearOnDefault: true,
+    history: 'replace',
+    shallow: true,
+    startTransition,
+    urlKeys: catalogControlUrlKeys,
+  })
   const debouncedQuery = useDebouncedValue(controls.query)
   const debouncedCustomPriceMin = useDebouncedValue(controls.customPriceMin, CUSTOM_PRICE_FILTER_DEBOUNCE_MS)
   const debouncedCustomPriceMax = useDebouncedValue(controls.customPriceMax, CUSTOM_PRICE_FILTER_DEBOUNCE_MS)
@@ -71,7 +88,7 @@ function App() {
     }),
     [catalogSafeControls, debouncedCustomPriceMax, debouncedCustomPriceMin, debouncedQuery],
   )
-  const { data: result } = useCatalogResults(items, activeControls)
+  const { data: result, prefetchPage } = useCatalogResults(items, activeControls)
   const shareableControls = useMemo(
     () => ({
       ...catalogSafeControls,
@@ -93,19 +110,30 @@ function App() {
   )
 
   useEffect(() => {
+    if (initialControlsSnapshot.hasUrlControls || !initialControlsSnapshot.storedControls) {
+      return
+    }
+
+    skipNextPersistRef.current = true
+    void setControls(initialControlsSnapshot.storedControls)
+  }, [initialControlsSnapshot, setControls])
+
+  useEffect(() => {
+    if (skipNextPersistRef.current) {
+      skipNextPersistRef.current = false
+      return
+    }
+
     persistControlsToStorage(shareableControls)
-    replaceUrlWithControls(shareableControls)
   }, [shareableControls])
 
   useEffect(() => {
-    function syncControlsFromHistory() {
-      const urlControls = readControlsFromUrl()
-      setControls(urlControls ?? DEFAULT_SEARCH_CONTROLS)
+    if (items.length === 0 || controls.page === shareableControls.page) {
+      return
     }
 
-    window.addEventListener('popstate', syncControlsFromHistory)
-    return () => window.removeEventListener('popstate', syncControlsFromHistory)
-  }, [])
+    void setControls({ page: shareableControls.page })
+  }, [controls.page, items.length, setControls, shareableControls.page])
 
   useEffect(() => {
     if (items.length === 0 || result.totalPages <= 1) {
@@ -133,13 +161,11 @@ function App() {
   }, [activeControls, controls.page, items, result.totalPages])
 
   function updateControls(nextControls: Partial<SearchControls>) {
-    startTransition(() => {
-      setControls((current) => ({
-        ...getCatalogSafeControls(current, facets.categories, availableTags, items.length > 0),
-        ...nextControls,
-        page: nextControls.page ?? 1,
-      }))
-    })
+    void setControls((current) => ({
+      ...getCatalogSafeControls(current, facets.categories, availableTags, items.length > 0),
+      ...nextControls,
+      page: nextControls.page ?? 1,
+    }))
   }
 
   function chooseQuery(query: string) {
@@ -148,7 +174,7 @@ function App() {
 
   function resetControls() {
     clearPersistedControls()
-    startTransition(() => setControls(DEFAULT_SEARCH_CONTROLS))
+    void setControls(DEFAULT_SEARCH_CONTROLS)
   }
 
   return (
@@ -166,7 +192,10 @@ function App() {
           </h1>
         </section>
 
-        <section className="grid items-center gap-4 border-b border-line px-5 py-4 text-sm font-semibold text-muted md:grid-cols-[1fr_auto_1fr] lg:px-8">
+        <section
+          id="catalog-controls"
+          className="scroll-mt-4 grid items-center gap-4 border-b border-line px-5 py-4 text-sm font-semibold text-muted md:grid-cols-[1fr_auto_1fr] lg:px-8"
+        >
           <p className="text-center md:text-right">
             <span className="text-ink">{result.totalItems.toLocaleString()}</span> products
           </p>
@@ -216,6 +245,7 @@ function App() {
               resetControls={resetControls}
               result={result}
               status={{ hasActiveSearch, hasFilters, isError, isLoading, isPending }}
+              prefetchPage={prefetchPage}
               updateControls={updateControls}
             />
           </section>
