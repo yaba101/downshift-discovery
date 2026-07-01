@@ -113,20 +113,3 @@ The next step would be adding lightweight search analytics: track zero-result qu
 ## Tradeoff To Watch
 
 The main tradeoff is client-side search and filtering. For about 4,000 items, it keeps the app fast, simple, and easy to reason about. If the catalog grew much larger, I would move filtering/ranking/pagination server-side or use a dedicated search service with typo tolerance and synonym support.
-
-## Submission Reply Draft
-
-Hi Manuel,
-
-Thanks again for the build task. I built a focused product discovery page for the home goods catalog, with an emphasis on fast search, guided browsing, resilient handling of imperfect data, and a polished desktop/mobile experience.
-
-Links:
-
-- Code: [GitHub repo link]
-- Walkthrough: [Loom or Drive link]
-
-The README covers what I built, the decisions I made, why I made them, and the main tradeoff I would watch next.
-
-Best,
-
-Yeabsira
