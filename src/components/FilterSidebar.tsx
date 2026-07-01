@@ -1,5 +1,5 @@
 import { CheckCircle2, ChevronUp, Circle, Search, X } from 'lucide-react'
-import type { Dispatch, KeyboardEvent, ReactNode, SetStateAction } from 'react'
+import type { Dispatch, FocusEvent, KeyboardEvent, ReactNode, SetStateAction } from 'react'
 import { useId, useState } from 'react'
 import { Input } from './ui/input'
 import type { PriceRange, SearchControls } from '../types/catalog'
@@ -63,12 +63,19 @@ export function FilterSidebar({
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(0)
   const [collapsedSections, setCollapsedSections] = useState(defaultCollapsedSections)
+  const [customPriceDraft, setCustomPriceDraft] = useState<Partial<Record<'max' | 'min', string>>>({})
   const generatedId = useId()
   const searchInputId = `${idPrefix}-search`
+  const customPriceErrorId = `${idPrefix}-custom-price-error`
+  const customPriceMaxId = `${idPrefix}-custom-price-max`
+  const customPriceMinId = `${idPrefix}-custom-price-min`
   const suggestionsListId = `${idPrefix}-${generatedId}-suggestions`
   const visibleSuggestions = suggestions.slice(0, 3)
+  const customPriceMaxDraft = customPriceDraft.max ?? String(controls.customPriceMax)
+  const customPriceMinDraft = customPriceDraft.min ?? String(controls.customPriceMin)
   const customMinPercent = priceToPercent(controls.customPriceMin)
   const customMaxPercent = priceToPercent(controls.customPriceMax)
+  const customPriceValidation = getCustomPriceValidation(customPriceMinDraft, customPriceMaxDraft)
   const hasSuggestions = showSuggestions && controls.query.trim().length > 0 && visibleSuggestions.length > 0
   const activeSuggestionIndex = hasSuggestions ? Math.min(focusedSuggestionIndex, visibleSuggestions.length - 1) : -1
 
@@ -79,14 +86,50 @@ export function FilterSidebar({
     updateControls({ selectedTags })
   }
 
-  function updateCustomPrice(next: { min?: number; max?: number }) {
-    const nextMin = clampPrice(next.min ?? controls.customPriceMin)
-    const nextMax = clampPrice(next.max ?? controls.customPriceMax)
+  function applyCustomPrice(next: { min?: number; max?: number }, shouldRound = true) {
+    const nextMin = clampPrice(next.min ?? controls.customPriceMin, shouldRound)
+    const nextMax = clampPrice(next.max ?? controls.customPriceMax, shouldRound)
 
     updateControls({
       priceRange: 'custom',
       customPriceMin: Math.min(nextMin, nextMax),
       customPriceMax: Math.max(nextMin, nextMax),
+    })
+  }
+
+  function updateCustomPrice(next: { min?: number; max?: number }) {
+    applyCustomPrice(next)
+  }
+
+  function updateCustomPriceDraft(field: 'min' | 'max', value: string) {
+    const numericValue = value.replace(/\D/g, '')
+    const nextDraft = {
+      ...customPriceDraft,
+      [field]: numericValue,
+    }
+    const nextMinDraft = nextDraft.min ?? String(controls.customPriceMin)
+    const nextMaxDraft = nextDraft.max ?? String(controls.customPriceMax)
+    const validation = getCustomPriceValidation(nextMinDraft, nextMaxDraft)
+
+    setCustomPriceDraft(nextDraft)
+
+    if (!validation) {
+      applyCustomPrice(
+        {
+          max: Number(nextMaxDraft),
+          min: Number(nextMinDraft),
+        },
+        false,
+      )
+    }
+  }
+
+  function commitCustomPriceDraft(event: FocusEvent<HTMLInputElement>) {
+    const field = event.currentTarget.name as 'min' | 'max'
+
+    setCustomPriceDraft((current) => {
+      const { [field]: _removedField, ...nextDraft } = current
+      return nextDraft
     })
   }
 
@@ -304,6 +347,11 @@ export function FilterSidebar({
                 <span>${controls.customPriceMin.toLocaleString()}</span>
                 <span>${controls.customPriceMax.toLocaleString()}</span>
               </div>
+              {customPriceValidation ? (
+                <p id={customPriceErrorId} className="mb-4 border border-line bg-mist px-3 py-2 text-xs font-bold text-ink" role="alert">
+                  {customPriceValidation}
+                </p>
+              ) : null}
 
               <div className="relative mb-5 h-8">
                 <div className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-line" aria-hidden="true" />
@@ -322,12 +370,13 @@ export function FilterSidebar({
                   style={{ left: `${customMaxPercent}%` }}
                   aria-hidden="true"
                 />
-                <label className="sr-only" htmlFor="custom-price-min">
+                <label className="sr-only" htmlFor={`${customPriceMinId}-slider`}>
                   Minimum custom price
                 </label>
                 <input
-                  id="custom-price-min"
+                  id={`${customPriceMinId}-slider`}
                   type="range"
+                  aria-label="Minimum custom price slider"
                   min={MIN_PRICE}
                   max={MAX_PRICE}
                   step={PRICE_STEP}
@@ -335,12 +384,13 @@ export function FilterSidebar({
                   onChange={(event) => updateCustomPrice({ min: Number(event.target.value) })}
                   className="dual-range-input absolute inset-0 h-8 w-full bg-transparent"
                 />
-                <label className="sr-only" htmlFor="custom-price-max">
+                <label className="sr-only" htmlFor={`${customPriceMaxId}-slider`}>
                   Maximum custom price
                 </label>
                 <input
-                  id="custom-price-max"
+                  id={`${customPriceMaxId}-slider`}
                   type="range"
+                  aria-label="Maximum custom price slider"
                   min={MIN_PRICE}
                   max={MAX_PRICE}
                   step={PRICE_STEP}
@@ -351,27 +401,47 @@ export function FilterSidebar({
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <label className="space-y-1 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+                <label htmlFor={customPriceMinId} className="space-y-1 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
                   Min
                   <input
-                    type="number"
-                    min={MIN_PRICE}
-                    max={MAX_PRICE}
-                    step={PRICE_STEP}
-                    value={controls.customPriceMin}
-                    onChange={(event) => updateCustomPrice({ min: Number(event.target.value) })}
+                    id={customPriceMinId}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={4}
+                    name="min"
+                    pattern="[0-9]*"
+                    value={customPriceMinDraft}
+                    onBlur={commitCustomPriceDraft}
+                    onChange={(event) => updateCustomPriceDraft('min', event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.currentTarget.blur()
+                      }
+                    }}
+                    aria-invalid={Boolean(customPriceValidation)}
+                    aria-describedby={customPriceValidation ? customPriceErrorId : undefined}
                     className="h-10 w-full border border-line bg-transparent px-3 text-sm font-bold text-ink outline-none focus:ring-1 focus:ring-ink"
                   />
                 </label>
-                <label className="space-y-1 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
+                <label htmlFor={customPriceMaxId} className="space-y-1 text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
                   Max
                   <input
-                    type="number"
-                    min={MIN_PRICE}
-                    max={MAX_PRICE}
-                    step={PRICE_STEP}
-                    value={controls.customPriceMax}
-                    onChange={(event) => updateCustomPrice({ max: Number(event.target.value) })}
+                    id={customPriceMaxId}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={4}
+                    name="max"
+                    pattern="[0-9]*"
+                    value={customPriceMaxDraft}
+                    onBlur={commitCustomPriceDraft}
+                    onChange={(event) => updateCustomPriceDraft('max', event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.currentTarget.blur()
+                      }
+                    }}
+                    aria-invalid={Boolean(customPriceValidation)}
+                    aria-describedby={customPriceValidation ? customPriceErrorId : undefined}
                     className="h-10 w-full border border-line bg-transparent px-3 text-sm font-bold text-ink outline-none focus:ring-1 focus:ring-ink"
                   />
                 </label>
@@ -490,12 +560,40 @@ function ActiveFilterChip({
   )
 }
 
-function clampPrice(value: number) {
+function clampPrice(value: number, shouldRound = true) {
   if (Number.isNaN(value)) {
     return MIN_PRICE
   }
 
-  return Math.min(MAX_PRICE, Math.max(MIN_PRICE, Math.round(value / PRICE_STEP) * PRICE_STEP))
+  const boundedValue = Math.min(MAX_PRICE, Math.max(MIN_PRICE, value))
+  return shouldRound ? Math.round(boundedValue / PRICE_STEP) * PRICE_STEP : boundedValue
+}
+
+function getCustomPriceValidation(minDraft: string, maxDraft: string) {
+  if (!minDraft || !maxDraft) {
+    return 'Enter both a minimum and maximum price.'
+  }
+
+  const min = Number(minDraft)
+  const max = Number(maxDraft)
+
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    return 'Prices must use numbers only.'
+  }
+
+  if (min === 0 && max === 0) {
+    return 'Price range cannot be $0-$0.'
+  }
+
+  if (min > MAX_PRICE || max > MAX_PRICE) {
+    return `Prices cannot be above $${MAX_PRICE.toLocaleString()}.`
+  }
+
+  if (min > max) {
+    return 'Minimum price cannot be higher than maximum price.'
+  }
+
+  return null
 }
 
 function priceToPercent(value: number) {
