@@ -1,55 +1,84 @@
 # Downshift Product Discovery
 
-A focused product discovery page for the Downshift founding engineer build task. It fetches the provided home goods catalog, normalizes the imperfect data, and gives shoppers a fast way to search, browse, filter, and compare products without trying to become a full store.
+A small product discovery page for the Downshift founding engineer build task. The app helps someone search and browse about 4,000 home goods products without trying to become a full ecommerce store.
 
-## What I Built
+The prompt emphasized that the decisions around search matter more than search complexity, so this project focuses on a polished, fast, explainable discovery flow: browse first, search when needed, refine with lightweight filters, and keep imperfect catalog data from breaking the experience.
 
-- A Vite, React, TypeScript, Tailwind CSS, shadcn-style UI, and TanStack Query app.
-- Client-side catalog fetching and caching from a local mirror of the provided JSON file.
-- TanStack Query Devtools for inspecting catalog cache state during development.
-- A default discovery state with curated category and popular tag entry points.
-- Search across product title, brand, category, tags, and description.
-- Lightweight filters for category and availability, plus sort controls for featured, relevance, price, and rating.
-- Client-side pagination after filtering and ranking.
-- Product cards with image, stock state, brand, category, tags, rating, reviews, price, and matched-field hints.
-- Graceful fallbacks for missing prices, images, descriptions, and ratings.
+## What Was Built
+
+- A standalone Vite, React, TypeScript, Tailwind CSS, shadcn-style UI, TanStack Query, and nuqs app.
+- A catalog page with a bold editorial home-goods visual direction.
+- Client-side catalog fetching and caching through TanStack Query.
+- Client-side search across title, brand, category, tags, and description.
+- Filter controls for search, category, availability, price ranges, custom price, and popular tags.
+- Sort controls for best selling, relevance, price low to high, price high to low, and top rated.
+- Client-side pagination with adjacent-page and hover/page-input prefetching.
+- URL-driven filter state with nuqs so filtered views are refresh-safe and shareable.
+- Desktop filter rail and a mobile filter drawer so mobile users see products before filters.
+- Product cards with image fallback, price fallback, rating/review display, brand/category context, and accessible interactions.
 
 ## Why This Scope
 
-The prompt emphasized decisions around search more than the search implementation itself. For 4,000 items, a local client-side search is fast, understandable, and avoids unnecessary backend complexity. I kept the experience small but complete: one page, one prominent search path, useful browsing defaults, and enough refinement controls to help real users recover from vague searches.
+The task asked for a small product discovery page, not a full store. I intentionally kept the surface area focused:
 
-See `DESIGN.md` for the visual and UX rules used by the current interface.
+- No cart, checkout, authentication, or product detail pages.
+- No backend search service because 4,000 products is small enough for fast local filtering.
+- No complex ranking model because the search behavior should be easy to reason about in a short walkthrough.
+- Enough polish to make the results feel useful and production-minded.
+
+This let me spend the time on the important product decisions: how users start browsing, how search ranks matches, how filters combine, how mobile behaves, and how messy data is handled.
 
 ## Search And Discovery Decisions
 
-The ranking is intentionally simple and explainable:
+Search is local, fast, and deliberately explainable.
 
-- Title matches are weighted highest because they usually represent direct intent.
-- Brand and tag matches come next because users often search by maker, material, or style.
-- Category matches are useful for browsing, but less specific than title or tag matches.
-- Description matches help with recall, but carry the lowest weight.
-- In-stock and rating signals lightly improve ranked results without overpowering the query.
+- Title matches rank highest because they usually represent direct user intent.
+- Brand and tag matches rank next because shoppers often search by maker, material, style, or product attribute.
+- Category matches are useful, but less specific than direct title/tag matches.
+- Description matches are included as a softer recall signal.
+- In-stock status, rating, and review volume help default browsing feel curated without making release date recency the main signal.
 
-When there is no query, the app behaves like a discovery surface instead of showing a blank search page. It highlights categories, popular tags, and strong in-stock items so a user can start browsing immediately.
+When there is no query, the page behaves like a catalog browse experience instead of an empty search tool. Users can immediately scan products, sort the catalog, paginate, or open filters to narrow by category, availability, price, and tags.
 
-## Handling Imperfect Data
+## Data Handling
 
-The provided catalog URL is reachable from the command line, but the response does not include a browser CORS allow header. To keep the submitted app reliable on localhost or static hosting, I mirrored the file into `public/items.json` and still fetch it client-side through TanStack Query.
+The incoming catalog data is normalized before rendering so the UI can tolerate imperfect product records.
 
-The catalog has mixed price formats, missing images, missing descriptions, missing ratings, and future release dates. I normalize the data before rendering:
+- Number, string, and comma-formatted prices are coerced into nullable numbers.
+- Missing prices render safely instead of breaking sorting or cards.
+- Missing images use a designed placeholder.
+- Missing descriptions fall back to neutral display copy.
+- Missing ratings are handled without pretending every product has a score.
+- Future `releasedAt` values are preserved but are not treated as the primary ranking signal.
 
-- Number, string, and comma-formatted prices become a nullable number.
-- Missing prices render as `Price unavailable`.
-- Missing descriptions get a neutral fallback.
-- Missing images render a designed placeholder.
-- Missing ratings render as `No rating yet`.
-- Future release dates are preserved but not used as a primary ranking signal.
+The provided catalog is mirrored into `public/items.json` for reliable local/static app loading, then fetched client-side through TanStack Query.
+
+## State, Caching, And Performance
+
+- TanStack Query caches the catalog payload.
+- Derived result pages are cached by search/filter/sort/page query keys.
+- Adjacent result pages are prefetched after page load.
+- Pagination buttons prefetch on hover/focus.
+- Page-jump input prefetches valid typed pages before the user clicks Go.
+- Filter state lives in the URL through nuqs rather than localStorage, avoiding competing persistence sources.
+
+## Mobile Experience
+
+On desktop, the filter rail stays visible because there is enough room for browsing and refinement side-by-side.
+
+On mobile, the product grid comes first. Filters move into a floating button and native dialog drawer, so the first screen is not dominated by the full filter panel. This keeps mobile discovery closer to how a real shopper would browse.
 
 ## Run Locally
 
 ```bash
 pnpm install
 pnpm dev
+```
+
+The dev server can be run on a specific port with:
+
+```bash
+pnpm dev -- --host 127.0.0.1 --port 3003
 ```
 
 ## Verify
@@ -62,31 +91,42 @@ pnpm build
 
 ## Walkthrough Outline
 
-1. Open with the interpretation: this is a product discovery task, not a full store.
-2. Show the default browse state and explain why it is useful before someone searches.
-3. Search for examples like `linen lamp`, `rattan`, and a brand name.
-4. Toggle category, in-stock, and sort controls to show how refinement feels.
-5. Point out data fallbacks: missing image, missing price, and missing rating behavior.
-6. Close with the next step and tradeoff.
+Use this order for the 10-minute max recording requested in the prompt:
 
-## What I Would Do Next
+1. Open by restating the prompt: build a small product discovery page for 4,000 home goods items, not a full store.
+2. Explain the main product decision: optimize for useful discovery and explainable search decisions.
+3. Show the default catalog state and why users can browse immediately.
+4. Demo a search, such as `linen`, `folding`, `rattan`, or `lamp`.
+5. Explain weighted matching across title, brand, category, tags, and description.
+6. Demo filters: category, availability, price, custom price validation, and tags.
+7. Demo active filter chips and clear/reset behavior.
+8. Demo sorting and pagination.
+9. Point out TanStack Query caching, page prefetching, and URL state via nuqs.
+10. Show mobile mode and the filter drawer.
+11. Explain data normalization and fallback handling.
+12. Close with the next step and tradeoff below.
 
-The next step would be adding lightweight query analytics so we can see where users get zero results, which categories they expect, and whether filters are helping or hurting discovery.
+## Next Step
 
-The tradeoff I would watch is ranking complexity. It is tempting to keep adding scoring rules, but the better long-term answer might be learning from real usage before making the search feel too clever.
+The next step would be adding lightweight search analytics: track zero-result queries, common refinements, and which filters users remove. That would show whether the ranking and filter model matches real shopper behavior before making the search algorithm more complex.
+
+## Tradeoff To Watch
+
+The main tradeoff is client-side search and filtering. For about 4,000 items, it keeps the app fast, simple, and easy to reason about. If the catalog grew much larger, I would move filtering/ranking/pagination server-side or use a dedicated search service with typo tolerance and synonym support.
 
 ## Submission Reply Draft
 
 Hi Manuel,
 
-Thanks again for the build task. I built a focused product discovery page around the catalog, with an emphasis on fast search, guided browsing, and resilient handling of imperfect product data.
+Thanks again for the build task. I built a focused product discovery page for the home goods catalog, with an emphasis on fast search, guided browsing, resilient handling of imperfect data, and a polished desktop/mobile experience.
 
 Links:
 
 - Code: [GitHub repo link]
 - Walkthrough: [Loom or Drive link]
 
-The README covers what I built, the decisions I made, and the main tradeoff I would watch next.
+The README covers what I built, the decisions I made, why I made them, and the main tradeoff I would watch next.
 
 Best,
+
 Yeabsira
