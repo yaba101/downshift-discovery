@@ -35,8 +35,10 @@ jobs:
         channel: test
         api-key: ${{ secrets.TD_API_KEY }}
 
+    # Runs the E2E suite via the dedicated config (tests/**), kept separate from
+    # the app's own unit tests (src/**, run via `pnpm test`).
     - name: Run TestDriver.ai tests
-      run: npx vitest run
+      run: npx vitest run --config vitest.config.testdriver.mjs
 
     - name: Upload test results
       if: always()
