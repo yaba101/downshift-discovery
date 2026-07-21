@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# TestDriver.ai
+.env
+node_modules/
+test-results/
+.testdriver/
+*.log
